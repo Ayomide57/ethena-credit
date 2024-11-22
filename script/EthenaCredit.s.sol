@@ -2,17 +2,17 @@
 pragma solidity ^0.8.13;
 
 import {Script, console} from "forge-std/Script.sol";
-import {Counter} from "../src/Counter.sol";
+import {EthenaCredit} from "../src/EthenaCredit.sol";
 
-contract CounterScript is Script {
-    Counter public counter;
+contract DepositScript is Script {
+    EthenaCredit public ethenaCredit;
 
     function setUp() public {}
 
     function run() public {
         vm.startBroadcast();
 
-        counter = new Counter();
+        //ethenaCredit = new EthenaCredit();
 
         vm.stopBroadcast();
     }

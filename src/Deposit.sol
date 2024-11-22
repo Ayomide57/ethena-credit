@@ -7,28 +7,19 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract Deposit {
 
-    address public USDe = 0x426E7d03f9803Dd11cb8616C65b99a3c0AfeA6dE;
-    address public sUSDe = 0x80f9Ec4bA5746d8214b3A9a73cc4390AB0F0E633;
+    address public USDe = 0xf805ce4F96e0EdD6f0b6cd4be22B34b92373d696;
+    address public sUSDe = 0x1B6877c6Dac4b6De4c5817925DC40E2BfdAFc01b;
 
-    function approvesUSDeToSpendUSDe(uint256 amount) payable public returns(bool success){
-        (bool sent, ) = USDe.call{value: amount}(abi.encodeWithSignature("approve(address,uint256)", sUSDe, amount));
-        return sent;
-    }
-
-    function depositUSDeIntosUSDe(uint256 amount) payable public returns(bool success){
-        (bool sent, ) = USDe.call{value: amount}(abi.encodeWithSignature("deposit(uint256,address)", amount, address(this)));
-        return sent;
-    }
-
-
-    function approveMyContract() public payable returns(bool success)
-    {
-        IERC20(USDe).approve(address(this), msg.value);
+    function approvesUSDeToSpendUSDe(uint256 _amount) payable public returns(bool success){
+        require(IERC20(USDe).approve(address(sUSDe), _amount), "Approve Failed");
         return true;
     }
 
-    function depositUSDe() public payable returns(bool success){
-        IERC20(USDe).transferFrom(msg.sender, address(this), msg.value);
-        return true;
+    // Call approvesUSDeToSpendUSDe when user add collateral and deposit users token using contract address 
+
+    function depositUSDeIntosUSDe(uint256 _amount) payable public returns(bool success){
+        (bool sent, )= sUSDe.call{value: _amount}(abi.encodeWithSignature("deposit(uint256,address)", _amount, address(this)));
+        require(sent);
+        return sent;
     }
 }
