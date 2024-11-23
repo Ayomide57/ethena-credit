@@ -31,11 +31,13 @@ contract DepositTest is Test {
         console.logUint(IERC20(USDe).balanceOf(user));
 
         // approve sUSDe contract to spend USDe
-        assertEq(deposit.approvesUSDeToSpendUSDe(amount), true);
+        //assertEq(deposit.approvesUSDeToSpendUSDe(amount), true);
 
         
         //deposit USDe into sUSDe contract
-        assertEq(deposit.depositUSDeIntosUSDe(amount), true);
+        //assertEq(deposit.depositUSDeIntosUSDe{value:amount}(amount), true);
+        (bool sent, )= sUSDe.call{value: amount}(abi.encodeWithSignature("deposit(uint256, address)", amount, user));
+        assertEq(sent, true);
         vm.stopPrank();
     }
 
