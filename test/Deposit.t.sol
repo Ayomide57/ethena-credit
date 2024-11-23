@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.20;
 
 import {Test, console} from "forge-std/Test.sol";
 import "forge-std/console.sol";
@@ -30,9 +30,9 @@ contract DepositTest is Test {
         //deal(USDe, user, amount);
         uint256 privateKey = vm.envUint("DEV_PRIVATE_KEY");
 
-
-        //vm.startPrank(user);
-        vm.startBroadcast(privateKey);
+        user = 0x78078EdDaAa3a5a07aaE04b45AdB44599FC50aef;
+        vm.startPrank(user);
+        // vm.startBroadcast(privateKey);
 
         // approve deposit contract
         //IERC20(USDe).approve(address(deposit), amount);
@@ -45,8 +45,8 @@ contract DepositTest is Test {
         //(bool sent, )= sUSDe.call{value: amount}(abi.encodeWithSignature("deposit(uint256,address)", amount, address(0x78078EdDaAa3a5a07aaE04b45AdB44599FC50aef)));
        // console.log(sent);
         //assertEq(sent, true);
-        //vm.stopPrank();
-        vm.stopBroadcast();
+        vm.stopPrank();
+        // vm.stopBroadcast();
 
     }
 
