@@ -6,3 +6,4 @@ solc_version = "0.8.22"
 evm_version = 'shanghai'
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
+
