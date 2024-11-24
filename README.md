@@ -71,7 +71,7 @@ Frontend
 - **GitHub:** [Ayomide](https://github.com/Ayomide57/)
 - **Email:** [aderojuolaayomide57@gmail.com](mailto:aderojuolaayomide57@gmail.com)
 - **Email:** [quadriaderojuola@gmail.com](mailto:quadriaderojuola@gmail.com)
-- **Git Repository:** [rwa-loan-collateral](https://github.com/Ayomide57/rwa-loan-collateral)
+- **Git Repository:** [ethena-credit](https://github.com/Ayomide57/ethena-credit)
 - **Mentor:** 0xaman (Smart contract Auditor)
 - **UI/UX:** Dani
 
