@@ -4,6 +4,8 @@ pragma solidity ^0.8.13;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@pythnetwork/pyth-sdk-solidity/IPyth.sol";
+import "@pythnetwork/pyth-sdk-solidity/PythStructs.sol";
 
 
 contract EthenaCredit is Ownable {
@@ -24,9 +26,13 @@ contract EthenaCredit is Ownable {
     error ErrorLoanIsYetToBeDisbursed();
     error ErrorYouHaveExceededMaxLoanCollateralEligibility(uint loan_amount);
     error ErrorDurationMustBeLessThanOneYear();
+    error ErrorInvestmentDurationMustMoreThanAMonth();
     error ErrorCollateralDoesntExist();
     error ErrorLoanRepaid();
     error ErrorLoanNotRepaid();
+    error ErrorInvestmentRepaid();
+    error ErrorAccountNotFound();
+
 
     //events
 
@@ -89,7 +95,8 @@ contract EthenaCredit is Ownable {
     // withdrawal event, when user withdraws their investment and profit
     event withdrawInvestmentEvent(
         address indexed investor,
-        uint256 indexed total_amount_withdraw
+        uint256 indexed total_amount_withdraw,
+        bool paid
     );
 
     // private counters
@@ -98,8 +105,8 @@ contract EthenaCredit is Ownable {
     uint256 public _loan_repayment_history_ids;
     uint256 public _investment_ids;
     uint8 private immutable multiplier = 100;
-    uint32 private immutable investment_period = 365 days;
-    uint256 public immutable minimum_investment = 1 ether;
+    uint32 public minimum_investment_period = 30 days;
+    uint256 public minimum_investment = 1 ether;
         // The percentage of additional loan they can get borrow
     uint8 public s_max_loan_rate = 50; // loans interest rate
     uint8 public s_investor_rate; // investors interest rates
@@ -119,9 +126,10 @@ contract EthenaCredit is Ownable {
     // sUSDe addresses
     address public s_susde_token_address;
 
-
     /// @notice The oracle contract
-    // ISupraOraclePull internal oracle;
+    // IPyth oracle;
+    IPyth internal pyth;
+    bytes32 internal priceFeedId;
 
 
     struct InvestorInfo {
@@ -130,12 +138,14 @@ contract EthenaCredit is Ownable {
         uint256 accumulated_interest;
         uint256 investment_date;
         uint256 withdrawal_date;
+        bool paid;
         bool existed;
     }
 
     struct Loan {
         bool loan_disbursed;
         bool repaid;
+        bool existed;
         address borrower;
         uint amount;
         uint256 collateral_id; //
@@ -165,25 +175,25 @@ contract EthenaCredit is Ownable {
     }
 
     //constructor
-    constructor(address _usde_token_address, address _susde_token_address, uint8 _investor_rate) Ownable(msg.sender) {
+    constructor(address _usde_token_address, address _susde_token_address, address _pyth_contract, bytes32 _priceFeedId, uint8 _investor_rate) Ownable(msg.sender) {
         s_usde_token_address = _usde_token_address;
         s_susde_token_address = _susde_token_address;
         s_investor_rate = _investor_rate;
-        //oracle = ISupraOraclePull(_oracle);
+        pyth = IPyth(_pyth_contract);
+        priceFeedId = _priceFeedId;
     }
 
     /**
-     * loanRequest - request for a loan
+     * addCollateral - add users collateral (USDe) 
      * Check if collateral existed using the property registration number
-     * Call approvesUSDeToSpendUSDe when user add collateral and deposit users token using contract address 
+     * @param _amount - collateral amount
      */
 
-    function addCollateral(uint256 _amount) external returns (bool success) {
+    function addCollateral(uint256 _amount) payable external returns (bool success) {
         if(_amount < MIN_COLLATERAL_AMOUNT && _amount > MAX_COLLATERAL_AMOUNT) revert ErrorAmountShouldBeBetweenMinimumAndMaximumAmount(_amount);
-
-        //require(IERC20(s_usde_token_address).transferFrom(msg.sender, address(this), amount), "Transfer Failed");
-        (bool sent, )= s_susde_token_address.call{value: _amount}(abi.encodeWithSignature("deposit(uint256,address)", _amount, address(this)));
-        if(!sent) revert ErrorTokenTranferFailed();
+        require(IERC20(s_usde_token_address).transferFrom(msg.sender, address(this), _amount), "Transfer Failed");
+        //(bool sent, )= s_susde_token_address.call{value: _amount}(abi.encodeWithSignature("deposit(uint256,address)", _amount, address(this)));
+        //if(!sent) revert ErrorTokenTranferFailed();
         collateralList[msg.sender][_collateral_ids] = Collateral(
             msg.sender,
             _amount,
@@ -196,10 +206,20 @@ contract EthenaCredit is Ownable {
             false,
             true
         );
+        _collateral_ids ++;
         return success;
     }
 
 
+    /**
+     * loanRequest - users request for a specific amount of loan, max is collateral + collateral/2 (50%) 
+     * Check if amount is within eligible amount users can borrow collateral + collateral/2
+     * Check if duration user provided greater than contract max loan duration
+     *  
+     * @param _collateral_id - The collateral Id
+     * @param _amount - loan amount
+     * @param _duration - The loan duration
+     */
 
     function loanRequest(
         uint256 _collateral_id,
@@ -210,12 +230,14 @@ contract EthenaCredit is Ownable {
 
         Collateral memory collateral = collateralList[msg.sender][_collateral_id];
         //calculate amount of loan users are eligible to 
-        uint loan_amount = (collateral.amount * s_max_loan_rate / multiplier) + collateral.amount;
-        if (_amount > loan_amount) revert ErrorYouHaveExceededMaxLoanCollateralEligibility(loan_amount);
+        uint max_loan_amount = (collateral.amount * s_max_loan_rate / multiplier) + collateral.amount;
+
+        if (_amount > max_loan_amount) revert ErrorYouHaveExceededMaxLoanCollateralEligibility(max_loan_amount);
         if(_duration > MAX_LOAN_DURATION) revert ErrorDurationMustBeLessThanOneYear();
         loanList[msg.sender][_loan_ids] = Loan(
             false,
             false,
+            true,
             msg.sender,
             _amount,
             _collateral_id,
@@ -245,21 +267,31 @@ contract EthenaCredit is Ownable {
     /**
      * paymentDisbursal - disburse loan to the borrower
      * Check if _borrower address is not zero address
+     * check if loan had been previously disbursed i.e false and set disburse to true 
      * @param _loan_id - The Id of the created loan
+     * @param _collateral_id - The Id of user's collateral
      */
 
     function withdrawLoan(
         uint256 _loan_id,
         uint256 _collateral_id
-    ) external onlyOwner returns (bool success) {
+    ) external returns (bool success) {
         if (msg.sender == address(0)) revert ErrorZeroAddressProvided();
+        if (loanList[msg.sender][_loan_id].existed == false) revert ErrorAccountNotFound();
         if (loanList[msg.sender][_loan_id].loan_disbursed == true) revert ErrorLoanDisbursed();
         loanList[msg.sender][_loan_id].loan_disbursed = true;
         collateralList[msg.sender][_collateral_id].active_loan = true; 
 
-
         //calculate worth of USDe to eth
-        payable(msg.sender).transfer(loanList[msg.sender][_loan_id].amount); //transfer just 1eth instead of amount_to_disburse, because we can’t afford it
+        uint256 loan_amount = loanList[msg.sender][_loan_id].amount;
+        //console.log(loan_amount);
+        uint256 ethPrice = this.updatePrice(loan_amount);
+        //console.log(ethPrice);
+        IERC20(s_usde_token_address).approve(address(s_susde_token_address), loan_amount);
+        (bool sent, bytes memory data) = s_susde_token_address.call(abi.encodeWithSignature("deposit(uint256,address)", loan_amount, address(this)));
+        if(!sent) revert ErrorTokenTranferFailed();
+
+        payable(loanList[msg.sender][_loan_id].borrower).transfer(ethPrice);
         uint due_date = block.timestamp + loanList[msg.sender][_loan_id].duration;
         loanList[msg.sender][_loan_id].due_date = due_date;
         emit disburseLoanEvent(
@@ -275,53 +307,71 @@ contract EthenaCredit is Ownable {
 
     /**
      * payLoan - pay loan
-     * @param _loan_id - The Id of the created loan
-     * @param _collateral_id - The Id of the created loan
+     * @param _loan_id - The Id user's loan
+     * @param _collateral_id - The Id of user's collateral
      * Check the remaining balance to be paid in eth and if all had been paid, prevent user from paying loan
+     * check if loan had been disbursed
      */
 
 
     function payLoan(
         uint256 _loan_id,
-        uint256 _collateral_id
-    ) external payable returns (bool success) {
+        uint256 _collateral_id,
+        uint256 _amount
+    ) external returns (bool success) {
         uint total_amount_paid = loanList[msg.sender][_loan_id].total_amount_paid;
         uint amount = loanList[msg.sender][_loan_id].amount;
         if(loanList[msg.sender][_loan_id].loan_disbursed == false) revert ErrorLoanIsYetToBeDisbursed(); //loan is yet to be disbursed 
-        if(loanList[msg.sender][_loan_id].repaid == false || total_amount_paid >= amount) revert ErrorLoanRepaid(); //loanrepaid
-        loanList[msg.sender][_loan_id].total_amount_paid += msg.value;
-        if((total_amount_paid + msg.value) >= amount){
+        if(loanList[msg.sender][_loan_id].repaid == true || total_amount_paid >= amount) revert ErrorLoanRepaid(); //loanrepaid
+        require(IERC20(s_usde_token_address).transferFrom(msg.sender, address(this), _amount), "Transfer Failed");
+        loanList[msg.sender][_loan_id].total_amount_paid += _amount;
+        if((total_amount_paid + _amount) >= amount){
             loanList[msg.sender][_loan_id].repaid = true;
             collateralList[msg.sender][_collateral_id].active_loan = false;
         }
         emit loanRepaymentHistoryEvent(
             msg.sender,
             _loan_id,
-            msg.value,
+            _amount,
             _loan_repayment_history_ids
         );
         _loan_repayment_history_ids++;
         return true;
     }
 
+    /**
+     * withdrawCollateral - function to withdraw user's collateral
+     * @param _collateral_id - Collateral ID
+     * check if this particular collateral active
+     * delete collateral after user withdraws collateral
+     */
+
     function withdrawCollateral(
-        uint256 _loan_id,
+        //uint256 _loan_id,
         uint256 _collateral_id)
     public payable returns(bool success) {
-        if(loanList[msg.sender][_loan_id].repaid == false) revert ErrorLoanNotRepaid(); 
-        if(collateralList[msg.sender][_collateral_id].active_loan == true) revert ErrorLoanNotRepaid();
-
+        //if(loanList[msg.sender][_loan_id].repaid == false) revert ErrorLoanNotRepaid(); 
+        if(collateralList[msg.sender][_collateral_id].active_loan) revert ErrorLoanNotRepaid();
+        uint total_amount_to_withdraw = collateralList[msg.sender][_collateral_id].amount;
+        collateralList[msg.sender][_collateral_id].active_loan = false;
+        delete collateralList[msg.sender][_collateral_id];
+        require(IERC20(s_usde_token_address).transfer(msg.sender, total_amount_to_withdraw), "Transfer Failed");
         return true; 
     }
 
     /**
      * Invest - Invest minimum 1 ether into the business
-     *
+     * @param _amount - Investment amount
+     * @param _duration - The duration of the investment
+     * Check if amount is less than the minimum invesment amount
+     * check to see if the duration is higher than now and higher or equal to 30 days
      */
     function invest(uint _amount, uint256 _duration) external returns (bool success) {
         if (_amount < minimum_investment) revert ErrorInsufficientFund();
-        //require(IERC20(s_usde_token_address).transferFrom(msg.sender, address(this), _amount), "Transfer Failed");
-        (bool sent, )= s_susde_token_address.call{value: _amount}(abi.encodeWithSignature("deposit(uint256,address)", _amount, address(this)));
+        if (block.timestamp + minimum_investment_period <= block.timestamp + _duration) revert ErrorInvestmentDurationMustMoreThanAMonth();
+        require(IERC20(s_usde_token_address).transferFrom(msg.sender, address(this), _amount), "Transfer Failed");
+        IERC20(s_usde_token_address).approve(address(s_susde_token_address), _amount);
+        (bool sent, bytes memory data) = s_susde_token_address.call(abi.encodeWithSignature("deposit(uint256,address)", _amount, address(this)));
         if(!sent) revert ErrorTokenTranferFailed();
 
         uint256 total = (_amount * multiplier) / s_investor_rate;
@@ -331,6 +381,7 @@ contract EthenaCredit is Ownable {
             total / multiplier,
             block.timestamp,
             block.timestamp + _duration,
+            false,
             true
         );
         emit investmentEvent(
@@ -339,13 +390,16 @@ contract EthenaCredit is Ownable {
             total / multiplier,
             block.timestamp + _duration
         );
+        _investment_ids++;
         return success;
     }
 
     /**
      * WithdrawInvestment - withdraw your investment after a year of investment
-     * function check to see if investor existed
-     * check to see if the timer is exactly a year and more, this to ensure user doesn’t attempt to withdraw before a year
+     * @param _investment_id - Investment Id
+     * function check to see if investor existed or invested into the protocol
+     * check to see if the withdrawal_date greater than current time stamp, if withdrawal date is due
+     * check if the investment had been paid
      * check to see if the contract has sufficient amount for user to withdraw
      */
     function withdrawInvestment(
@@ -355,20 +409,64 @@ contract EthenaCredit is Ownable {
             revert ErrorInvestorNotFound();
         if (investorList[msg.sender][_investment_id].withdrawal_date > block.timestamp)
             revert ErrorNotEligibleToWithDraw();
+        if (investorList[msg.sender][_investment_id].paid)
+            revert ErrorInvestmentRepaid();
         uint256 total_amount_to_withdraw = investorList[msg.sender][_investment_id].total_amount +
             investorList[msg.sender][_investment_id].accumulated_interest;
         if (address(this).balance > total_amount_to_withdraw)
             revert ErrorInsufficientFund();
+
         investorList[msg.sender][_investment_id].total_amount = 0;
         investorList[msg.sender][_investment_id].accumulated_interest = 0;
-        (bool cooldown, )= s_susde_token_address.call{value: total_amount_to_withdraw}(abi.encodeWithSignature("cooldownAssets(uint256)", total_amount_to_withdraw));
-        if(cooldown) revert ErrorTokenTranferFailed(); //cool down failed
-        (bool unstake, )= s_susde_token_address.call(abi.encodeWithSignature("unstake(address)", msg.sender));
-        if(unstake) revert ErrorTokenTranferFailed(); //unstake failed
-        //payable(address(this)).transfer(total_amount_to_withdraw);
-        emit withdrawInvestmentEvent(msg.sender, total_amount_to_withdraw);
+        investorList[msg.sender][_investment_id].paid = true;
+        require(IERC20(s_usde_token_address).transfer(msg.sender, total_amount_to_withdraw), "Transfer Failed");
+
+        emit withdrawInvestmentEvent(msg.sender, total_amount_to_withdraw, true);
         return true;
     }
+
+    /**
+     * cooldownAssetsUSDe - withdraw your investment after a year of investment
+     * @param _amount - Amount to cool down
+     * function cools down asset, essential prepare assets withrawal
+     * only owner can call this function
+     */
+
+
+    function cooldownAssetsUSDe(uint256 _amount) onlyOwner public returns(bool success){
+        (bool sent, bytes memory data) = s_susde_token_address.call(abi.encodeWithSignature("cooldownAssets(uint256)", _amount));
+        //console.logBytes(data);
+        require(sent , "failed");
+        return sent;
+    }
+
+    /**
+     * unstakeAssetsUSDe - withdraw your investment after a year of investment
+     * function unstake sUSDe Asset
+     * only owner can call this function
+     */
+
+
+    function unstakeAssetsUSDe() onlyOwner public returns(bool success){
+        (bool sent, bytes memory data) = s_susde_token_address.call(abi.encodeWithSignature("unstake(address)", address(this)));
+        //console.logBytes(data);
+        require(sent , "failed");
+        return sent;
+    }
+
+
+    //function updatePrice(bytes[] calldata pythPriceUpdate) external {
+    function updatePrice(uint256 amount) view external returns(uint256) {
+        //uint updateFee = pyth.getUpdateFee(pythPriceUpdate);
+        //pyth.updatePriceFeeds{ value: updateFee }(pythPriceUpdate);
+        PythStructs.Price memory price = pyth.getPriceNoOlderThan(priceFeedId, 360000);
+        uint ethPrice18Decimals = (uint(uint64(price.price)) * (10 ** 18)) /
+        (10 ** uint8(uint32(-1 * price.expo)));
+        uint usdeValue = ethPrice18Decimals / amount;
+        uint usde_eth_value = 1 ether / usdeValue ;
+        return usde_eth_value;
+    }
+
     
 
     function getLoanInformation(

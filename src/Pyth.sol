@@ -28,7 +28,13 @@ contract MyFirstPythContract {
    function updateAndMint(bytes[] calldata pythPriceUpdate) external payable {
     uint updateFee = pyth.getUpdateFee(pythPriceUpdate);
     pyth.updatePriceFeeds{ value: updateFee }(pythPriceUpdate);
+     PythStructs.Price memory price = pyth.getPriceNoOlderThan(ethUsdPriceId, 60);
  
+    uint ethPrice18Decimals = (uint(uint64(price.price)) * (10 ** 18)) /
+      (10 ** uint8(uint32(-1 * price.expo)));
+     console2.log(ethPrice18Decimals);
+
+
     mint();
   }
  

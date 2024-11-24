@@ -15,7 +15,7 @@ contract DepositTest is Test {
     Deposit public deposit;
 
     // parameters for an option
-    uint256 amount = 100000000000000000;
+    uint256 amount = 1000000000000000000;
     //address user = makeAddr("user");
 
     function setUp() public {
@@ -28,19 +28,50 @@ contract DepositTest is Test {
         address user = 0x78078EdDaAa3a5a07aaE04b45AdB44599FC50aef;
 
         vm.startPrank(user);
+
+        // approve deposit contract
+        IERC20(USDe).approve(address(deposit), amount);
         console.logUint(IERC20(USDe).balanceOf(user));
-
+        console.log("user" , user.balance);
         // approve sUSDe contract to spend USDe
-        //assertEq(deposit.approvesUSDeToSpendUSDe(amount), true);
+        assertEq(deposit.approvesUSDeToSpendUSDe(amount), true);
 
-        
-        //deposit USDe into sUSDe contract
-        //assertEq(deposit.depositUSDeIntosUSDe{value:amount}(amount), true);
-        (bool sent, )= sUSDe.call{value: amount}(abi.encodeWithSignature("deposit(uint256, address)", amount, user));
-        assertEq(sent, true);
+        assertEq(deposit.depositUSDeIntosUSDe(amount), true);
+        console.logUint(IERC20(USDe).balanceOf(address(deposit)));
+        console.logUint(IERC20(USDe).balanceOf(user));
+        console.log("user" , user.balance);
+
         vm.stopPrank();
     }
 
+    function testDepositUSDeAndWithdrawProfit() public {
+
+        //address user = 0x78078EdDaAa3a5a07aaE04b45AdB44599FC50aef;
+        address user = 0x9339C5dEEE360d0E352C7E43C9256C7DdC97D37F;
+
+        vm.startPrank(user);
+
+        // approve deposit contract
+        IERC20(USDe).approve(address(deposit), amount);
+        console.logUint(IERC20(USDe).balanceOf(user));
+        console.log("user" , user.balance);
+        // approve sUSDe contract to spend USDe
+        assertEq(deposit.approvesUSDeToSpendUSDe(amount), true);
+
+        assertEq(deposit.depositUSDeIntosUSDe(amount), true);
+        console.logUint(IERC20(USDe).balanceOf(address(deposit)));
+        console.logUint(IERC20(USDe).balanceOf(user));
+        assertEq(deposit.cooldownAssetsUSDe(10000000000000000), true);
+        //assertEq(deposit.unstakeAssetsUSDe(), true);
+
+        (bool sent, bytes memory data) = sUSDe.call(abi.encodeWithSignature("unstake(address)", user));
+        console.logBytes(data);
+        assertEq(sent, true);
+        console.logUint(IERC20(sUSDe).balanceOf(user));
+
+
+        vm.stopPrank();
+    }
 
 
 

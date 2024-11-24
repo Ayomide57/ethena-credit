@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+import "forge-std/console.sol";
 
 contract Deposit {
 
@@ -18,8 +19,26 @@ contract Deposit {
     // Call approvesUSDeToSpendUSDe when user add collateral and deposit users token using contract address 
 
     function depositUSDeIntosUSDe(uint256 _amount) payable public returns(bool success){
-        (bool sent, )= sUSDe.call{value: _amount}(abi.encodeWithSignature("deposit(uint256,address)", _amount, address(this)));
-        require(sent);
+        IERC20(USDe).transferFrom(msg.sender, address(this),_amount);
+        (bool sent, ) = sUSDe.call(abi.encodeWithSignature("deposit(uint256,address)", _amount, address(this)));
+        require(sent , "failed");
         return sent;
     }
+
+    function cooldownAssetsUSDe(uint256 _amount) public returns(bool success){
+        (bool sent, bytes memory data) = sUSDe.call(abi.encodeWithSignature("cooldownAssets(uint256)", _amount));
+        console.logBytes(data);
+        require(sent , "failed");
+        return sent;
+    }
+
+    function unstakeAssetsUSDe() public returns(bool success){
+        (bool sent, bytes memory data) = sUSDe.call(abi.encodeWithSignature("unstake(address)", address(this)));
+        console.logBytes(data);
+        require(sent , "failed");
+        return sent;
+    }
+
+
+
 }
