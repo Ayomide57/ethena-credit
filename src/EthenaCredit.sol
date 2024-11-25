@@ -276,7 +276,7 @@ contract EthenaCredit is Ownable {
         uint256 _loan_id,
         uint256 _collateral_id
     ) external returns (bool success) {
-        if (msg.sender == address(0)) revert ErrorZeroAddressProvided();
+        if (msg.sender == address(0)) revert ErrorZeroAddressProvided();/// @note: wrong check no need  
         if (loanList[msg.sender][_loan_id].existed == false) revert ErrorAccountNotFound();
         if (loanList[msg.sender][_loan_id].loan_disbursed == true) revert ErrorLoanDisbursed();
         loanList[msg.sender][_loan_id].loan_disbursed = true;
@@ -291,7 +291,7 @@ contract EthenaCredit is Ownable {
         (bool sent, bytes memory data) = s_susde_token_address.call(abi.encodeWithSignature("deposit(uint256,address)", loan_amount, address(this)));
         if(!sent) revert ErrorTokenTranferFailed();
 
-        payable(loanList[msg.sender][_loan_id].borrower).transfer(ethPrice);
+        payable(loanList[msg.sender][_loan_id].borrower).transfer(ethPrice);// @note : use low level call syntax
         uint due_date = block.timestamp + loanList[msg.sender][_loan_id].duration;
         loanList[msg.sender][_loan_id].due_date = due_date;
         emit disburseLoanEvent(
@@ -319,6 +319,7 @@ contract EthenaCredit is Ownable {
         uint256 _collateral_id,
         uint256 _amount
     ) external returns (bool success) {
+        // @note : i think the user have to repay the eth or the barrow token , here we are taking the collateral token which is not right
         uint total_amount_paid = loanList[msg.sender][_loan_id].total_amount_paid;
         uint amount = loanList[msg.sender][_loan_id].amount;
         if(loanList[msg.sender][_loan_id].loan_disbursed == false) revert ErrorLoanIsYetToBeDisbursed(); //loan is yet to be disbursed 

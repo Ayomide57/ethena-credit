@@ -12,7 +12,8 @@ contract Deposit {
     address public sUSDe = 0x1B6877c6Dac4b6De4c5817925DC40E2BfdAFc01b;
 
     function approvesUSDeToSpendUSDe(uint256 _amount) payable public returns(bool success){
-        require(IERC20(USDe).approve(address(sUSDe), _amount), "Approve Failed");
+        // 2note : no need for this funciton you can do the same indside  depositUSDeIntosUSDe func
+        require(IERC20(USDe).approve(address(sUSDe), _amount), "Approve Failed"); 
         return true;
     }
 
