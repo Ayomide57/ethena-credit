@@ -3,32 +3,13 @@ import Link from "next/link";
 import { GiFamilyHouse } from "react-icons/gi";
 import { RiMoneyDollarCircleLine } from "react-icons/ri";
 import { GiTakeMyMoney } from "react-icons/gi";
-import { useState, useCallback, useEffect } from "react";
-import { getCompany } from "@/util";
-import { IUserData } from "@/app/dashboard/profile/page";
-import { getAccount } from "@wagmi/core";
-import { config } from "@/util/config";
+//import { useActiveAccount } from "thirdweb/react";
 
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const SideBar = ({ }: any) => {
-    const [account, setAccount] = useState<`0x${string}`>();
-    const [userData, setUserData] = useState<IUserData | unknown>(null);
+    //const smartAccount = useActiveAccount();
 
-    const UpdateUI = useCallback(async () => {
-      const accountSource = getAccount(config);
-      setAccount(accountSource?.address);
-      console.log(account);
-      if (account) {
-        const response = getCompany({ borrower: account });
-        setUserData(await response);
-      }
-    }, [account]);
-
-    useEffect(() => {
-      UpdateUI();
-      console.log(userData);
-    }, [UpdateUI, account, userData]);
 
     return (
       <div className="h-full p-3 space-y-2 w-60 border border-primary dark:text-gray-800 backdrop-blur-xl bg-sky-700/30 rounded-2xl">
@@ -41,9 +22,6 @@ const SideBar = ({ }: any) => {
             height={20}
           />
           <div>
-            {userData && userData.name && (
-              <h2 className="text-sm font-semibold">{userData.name}</h2>
-            )}
             <span className="flex items-center space-x-1">
               <Link
                 rel="noopener noreferrer"
@@ -79,7 +57,7 @@ const SideBar = ({ }: any) => {
                 href="/dashboard/loans"
                 className="flex items-center p-2 space-x-3 rounded-md"
               >
-                <RiMoneyDollarCircleLine />
+                <RiMoneyDollarCircleLine size={20} />
                 <span>Loans</span>
               </Link>
             </li>
@@ -89,18 +67,18 @@ const SideBar = ({ }: any) => {
                 href="/dashboard/collateral"
                 className="flex items-center p-2 space-x-3 rounded-md"
               >
-                <GiFamilyHouse />
+                <GiFamilyHouse size={20} />
                 <span>Collaterals</span>
               </Link>
             </li>
             <li>
               <Link
                 rel="noopener noreferrer"
-                href="/dashboard/loans/request-loans"
+                href="/dashboard/investments/"
                 className="flex items-center p-2 space-x-3 rounded-md"
               >
-                <GiTakeMyMoney />
-                <span>Loan Requests</span>
+                <GiTakeMyMoney size={20} />
+                <span>Investments</span>
               </Link>
             </li>
           </ul>

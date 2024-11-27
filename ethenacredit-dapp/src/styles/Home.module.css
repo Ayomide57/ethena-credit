@@ -296,7 +296,7 @@ span.button:hover {
 
 .header_wrapper .header_bottom_wrapper{
   position: absolute;
-  background-image: url("/Neo.png");
+  //background-image: url("/Neo.png");
   width: -webkit-fill-available;
   background-repeat: round;
   height: 70px;

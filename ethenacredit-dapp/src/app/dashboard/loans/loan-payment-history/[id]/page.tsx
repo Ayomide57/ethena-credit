@@ -38,21 +38,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { BigNumberish } from "ethers";
-import Link from "next/link";
 
-export type Loan = {
-  id: any;
-  repaid: boolean;
-  loan_disbursed: boolean;
-  borrower: string;
-  amount: BigNumberish;
-  duration: BigNumberish;
-  due_date: BigNumberish;
-  total_amount_paid: BigNumberish;
-  collateral_id: BigNumberish;
+export type History = {
+    id: any;
+    borrower: string;
+    amount: BigNumberish;
+    loan_id: BigNumberish;
 };
 
-const columns: ColumnDef<Loan>[] = [
+const columns: ColumnDef<History>[] = [
   {
     id: "select",
     header: ({ table }) => (
@@ -110,61 +104,13 @@ const columns: ColumnDef<Loan>[] = [
       );
     },
   },
-  {
-    accessorKey: "duration",
-    header: () => <div className="text-right">Duration</div>,
-    cell: ({ row }) => {
-      return (
-        <div className="text-right font-medium">
-          {`${row.getValue("duration")}`}{" "}
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: "due_date",
-    header: () => <div className="text-right">Due Date</div>,
-    cell: ({ row }) => {
-      return (
-        <div className="text-right font-medium">
-          {`${row.getValue("due_date")}`}{" "}
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: "total_amount_paid",
-    header: () => <div className="text-right">Amount Paid</div>,
-    cell: ({ row }) => {
-      return (
-        <div className="text-right font-medium">
-          {`${row.getValue("total_amount_paid")}`}{" "}
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: "repaid",
-    header: "Repaid",
-    cell: ({ row }) => (
-      <div className="capitalize">{row.getValue("repaid") ? "Yes" : "No"}</div>
-    ),
-  },
-  {
-    accessorKey: "loan_disbursed",
-    header: "Disbursed",
-    cell: ({ row }) => (
-      <div className="capitalize">
-        {row.getValue("loan_disbursed") ? "Yes" : "No"}
-      </div>
-    ),
-  },
   //end
   {
     id: "actions",
     enableHiding: false,
     cell: ({ row }) => {
       const request = row.original;
+
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -175,36 +121,22 @@ const columns: ColumnDef<Loan>[] = [
           </DropdownMenuTrigger>
           <DropdownMenuContent
             align="end"
-            className="border border-primary bg-sky-700/80 backdrop-blur-xl text-white"
+            className="border backdrop-blur-xl bg-sky-700/30 border-primary"
           >
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuItem
               onClick={() => navigator.clipboard.writeText(`${request.id}`)}
             >
+              Copy Loan Payment ID
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() =>
+                navigator.clipboard.writeText(`${request.loan_id}`)
+              }
+            >
               Copy Loan ID
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <Link
-                href={`/dashboard/collateral/collateral-detail/${request.id}`}
-              >
-                View loan details
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Link
-                href={`/dashboard/loans/loan-payment-history/${request.id}`}
-              >
-                Loan Payment History
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Link
-                href={`/dashboard/loans/pay-loan/${request.id}`}
-              >
-                Pay Loan
-              </Link>
-            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       );
@@ -212,38 +144,30 @@ const columns: ColumnDef<Loan>[] = [
   },
 ];
 
-const Loans = () => {
+const PaymentHistory = () => {
   const [data, setProperties] = useState<any>([]);
 
-  const queryRwaEvents = React.useCallback(async () => {
-    const events = await ethenaContract.queryFilter("loanRequestEvent");
-    const filterVal: Loan[] = [];
+  const queryPaymentHistoryEvent = React.useCallback(async () => {
+    const events = await ethenaContract.queryFilter(
+      "loanRepaymentHistoryEvent"
+    );
+    const filterVal: History[] = [];
     events.map(
       (event: {
         args: {
-          loan_id: any;
-          repaid: boolean;
-          loan_disbursed: boolean;
+          loan_payment_id: any;
           borrower: string;
           amount: BigNumberish;
-          duration: BigNumberish;
-          due_date: BigNumberish;
-          total_amount_paid: BigNumberish;
-          collateral_id: BigNumberish;
+          loan_id: BigNumberish;
         };
       }) => {
         return (
           event.args &&
           filterVal.push({
-            id: event.args.loan_id,
-            repaid: event.args.repaid,
-            loan_disbursed: event.args.loan_disbursed,
+            id: event.args.loan_payment_id,
             borrower: event.args.borrower,
             amount: event.args.amount,
-            duration: event.args.duration,
-            due_date: event.args.due_date,
-            total_amount_paid: event.args.total_amount_paid,
-            collateral_id: event.args.collateral_id,
+            loan_id: event.args.loan_id,
           })
         );
       }
@@ -260,8 +184,8 @@ const Loans = () => {
   const [rowSelection, setRowSelection] = React.useState({});
 
   useEffect(() => {
-    queryRwaEvents();
-  }, [data, queryRwaEvents]);
+    queryPaymentHistoryEvent();
+  }, [data, queryPaymentHistoryEvent]);
 
   const table = useReactTable({
     data,
@@ -288,25 +212,26 @@ const Loans = () => {
       style={{ width: "-webkit-fill-available" }}
     >
       <div className="flex justify-between">
-        <h1 className="p-4 text-3xl">Loans</h1>
+        <h1 className="p-4 text-3xl">Loan Payment History</h1>
       </div>
+
       <div
         //className={styles.content}
         style={{ width: "-webkit-fill-available" }}
       >
         <div className="mx-auto">
           <div className="p-4">
-            <h1 className="">All Loans</h1>
+            <h1 className="">All Payment History</h1>
             <div className="flex items-center py-4">
               <Input
-                placeholder="Filter owner ..."
+                placeholder="Filter ID ..."
                 value={
-                  (table.getColumn("borrower")?.getFilterValue() as string) ??
+                  (table.getColumn("id")?.getFilterValue() as string) ??
                   ""
                 }
                 onChange={(event) =>
                   table
-                    .getColumn("borrower")
+                    .getColumn("id")
                     ?.setFilterValue(event.target.value)
                 }
                 className="max-w-sm border-primary"
@@ -322,7 +247,7 @@ const Loans = () => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align="end"
-                  className="border border-primary bg-sky-700/30 backdrop-blur-xl"
+                  className="border backdrop-blur-xl bg-sky-700/30 border-primary"
                 >
                   {table
                     .getAllColumns()
@@ -427,4 +352,4 @@ const Loans = () => {
   );
 };
 
-export default Loans;
+export default PaymentHistory;

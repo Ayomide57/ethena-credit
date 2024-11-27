@@ -1,270 +1,385 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { ChangeEvent } from "react";
-import { useStorageUpload } from "thirdweb/react";
-import Image from "next/image";
-import styles from "@/styles/Home.module.css";
 
-import { readContract, writeContract } from "@wagmi/core";
 
+import { ethenacreditAbi, ethenacreditAddress, USDe, sUSDe } from "./constants";
+
+import { ethers, JsonRpcProvider } from "ethers";
+import { prepareContractCall, getContract, sendTransaction, createThirdwebClient } from "thirdweb";
 import {
-  chaincreditAbi,
-  chaincreditAddress,
-  registrarAbi,
-  registrarAddresses,
-} from "./constants";
-import { config, neo } from "./config";
+  approve,
+} from "thirdweb/extensions/erc20";
 
-interface IUploadFile {
-  updateLink: (value: string) => void;
-}
-
-export const UploadToStorage = ({ updateLink }: IUploadFile) => {
-  const { mutateAsync: upload } = useStorageUpload();
-
-  const uploadFile = async (event: ChangeEvent<HTMLInputElement | null>) => {
-    let file = event.currentTarget.files && event.currentTarget.files[0];
-    const uris = await upload({ data: [file] });
-    updateLink(uris[0]);
-  };
-  return (
-    <label htmlFor="myfile">
-      <div className={styles.logo}>
-        <Image
-          src="/upload.png"
-          alt="upload Logo"
-          height="100"
-          width="250"
-        />
-      </div>
-      <input
-        className="h-[80px]"
-        id="myfile"
-        type="file"
-        accept="application/msword, application/vnd.ms-excel, application/vnd.ms-powerpoint,text/plain, application/pdf, image/*"
-        style={{ display: "none" }}
-        onChange={(event) => uploadFile(event)}
-        />
-    </label>
-  );
-
-};
+//import { BigNumberish } from "ethers";
+import toast from "react-hot-toast";
+import { sepolia } from "thirdweb/chains";
 
 
-export const registerCompany = async (values: {
-  username: string;
-  companyname: string;
-  phonenumber: string;
-  address: string;
-}) => {
-  const response = await writeContract(config, {
-    address: chaincreditAddress,
-    abi: chaincreditAbi,
-    functionName: "register",
-    args: [
-      values.username,
-      values.companyname,
-      values.address,
-      values.phonenumber,
-    ],
-    chainId: neo.id,
-    chain: neo
-  });
-  return response;
-};
 
-export const addCompanyCollateral = async (values: {
-  acres: number;
-  documenturl: string;
-  price: number;
-  property_RegId: number;
-  survey_zip_code: number;
-  survey_number: number;
-  property_type: string;
-  property_area: string;
-  prop_accessment_per_acre: number;
-}) => {
-  const response = await writeContract(config, {
-    address: chaincreditAddress,
-    abi: chaincreditAbi,
-    functionName: "addColaterals",
-    args: [
-      values.acres,
-      values.documenturl,
-      BigInt(values.price),
-      BigInt(values.property_RegId),
-      BigInt(values.survey_zip_code),
-      BigInt(values.survey_number),
-      values.property_type,
-      values.property_area,
-      BigInt(values.prop_accessment_per_acre),
-    ],
-  });
-  return response;
+const clientId = process.env.NEXT_PUBLIC_ClIENT_ID2 || "";
+
+export const client = createThirdwebClient({
+  clientId: clientId,
+});
+
+
+export const ethenaCreditContract = getContract({
+  client,
+  address: ethenacreditAddress,
+  chain: sepolia,
+  abi: ethenacreditAbi,
+});
+
+
+export const addCollateral = async (values: { account: any, amount: number }) => {
+  try {
+    const transaction = prepareContractCall({
+      contract: ethenaCreditContract,
+      method: "addCollateral",
+      params: [BigInt(values.amount)],
+    });
+
+    const { transactionHash } = await sendTransaction({
+      account: values.account,
+      transaction,
+    });
+
+    toast.success(transactionHash);
+    return transactionHash;
+  } catch (error) {
+    toast.error("Transaction Failed");
+    console.log("error =======================", error);
+    return error;
+  }
 };
 
 export const loanRequest = async (values: {
+  account: never;
+  collateral_id: number;
   amount: number;
-  property_RegId: number;
+  duration: number;
 }) => {
-  const response = await writeContract(config, {
-    address: chaincreditAddress,
-    abi: chaincreditAbi,
-    functionName: "loanRequest",
-    args: [BigInt(values.property_RegId), BigInt(values.amount)],
-  });
+  try {
+    const transaction = prepareContractCall({
+      contract: ethenaCreditContract,
+      method: "loanRequest",
+      params: [
+        BigInt(values.collateral_id),
+        BigInt(values.amount),
+        BigInt(values.duration),
+      ],
+    });
 
-  return response;
+    const { transactionHash } = await sendTransaction({
+      account: values.account,
+      transaction,
+    });
+
+    toast.success(transactionHash);
+    return transactionHash;
+  } catch (error) {
+    toast.error("Transaction Failed");
+    console.log("error =======================", error);
+    return error;
+  }
+};
+
+export const withdrawLoan = async (values: {
+  account: never;
+  loan_id: number;
+  collateral_id: number;
+}) => {
+  try {
+    const transaction = prepareContractCall({
+      contract: ethenaCreditContract,
+      method: "withdrawLoan",
+      params: [BigInt(values.loan_id), BigInt(values.collateral_id)],
+    });
+
+    const { transactionHash } = await sendTransaction({
+      account: values.account,
+      transaction,
+    });
+
+    toast.success(transactionHash);
+    return transactionHash;
+  } catch (error) {
+    toast.error("Transaction Failed");
+    console.log("error =======================", error);
+    return error;
+  }
+};
+
+export const withdrawCollateral = async (values: {
+  account: never;
+  collateral_id: number;
+}) => {
+  try {
+    const transaction = prepareContractCall({
+      contract: ethenaCreditContract,
+      method: "withdrawCollateral",
+      params: [
+        BigInt(values.collateral_id)],
+    });
+
+    const { transactionHash } = await sendTransaction({
+      account: values.account,
+      transaction,
+    });
+
+    toast.success(transactionHash);
+    return transactionHash;
+  } catch (error) {
+    toast.error("Transaction Failed");
+    console.log("error =======================", error);
+    return error;
+  }
+};
+
+export const withdrawInvestment = async (values: {
+  account: never;
+  investment_id: number;
+}) => {
+  try {
+    const transaction = prepareContractCall({
+      contract: ethenaCreditContract,
+      method: "withdrawInvestment",
+      params: [BigInt(values.investment_id)],
+    });
+
+    const { transactionHash } = await sendTransaction({
+      account: values.account,
+      transaction,
+    });
+
+    toast.success(transactionHash);
+    return transactionHash;
+  } catch (error) {
+    toast.error("Transaction Failed");
+    console.log("error =======================", error);
+    return error;
+  }
+};
+
+export const cooldownAssetsUSDe = async (values: {
+  account: never;
+  amount: number;
+}) => {
+  try {
+    const transaction = prepareContractCall({
+      contract: ethenaCreditContract,
+      method: "cooldownAssetsUSDe",
+      params: [BigInt(values.amount)],
+    });
+
+    const { transactionHash } = await sendTransaction({
+      account: values.account,
+      transaction,
+    });
+
+    toast.success(transactionHash);
+    return transactionHash;
+  } catch (error) {
+    toast.error("Transaction Failed");
+    console.log("error =======================", error);
+    return error;
+  }
+};
+
+export const unstakeAssetsUSDe = async (values: {
+  account: never;
+  amount: number;
+}) => {
+  try {
+    const transaction = prepareContractCall({
+      contract: ethenaCreditContract,
+      method: "unstakeAssetsUSDe",
+      params: [BigInt(values.amount)],
+    });
+
+    const { transactionHash } = await sendTransaction({
+      account: values.account,
+      transaction,
+    });
+
+    toast.success(transactionHash);
+    return transactionHash;
+  } catch (error) {
+    toast.error("Transaction Failed");
+    console.log("error =======================", error);
+    return error;
+  }
+};
+
+export const payLoan = async (
+  account: any,
+  amount: number,
+  loan_id: number,
+  collateral_id: number
+) => {
+  try {
+    //get usde abi and create contrat
+    const tx = approve({
+      contract: USDe,
+      spender: ethenacreditAddress,
+      amount: Number(amount),
+    });
+
+    const { transactionHash } = await sendTransaction({
+      account: account,
+      transaction: tx,
+    });
+
+    if (transactionHash) {
+      setTimeout(async () => {
+        const transaction = prepareContractCall({
+          contract: ethenaCreditContract,
+          method: "payLoan",
+          params: [BigInt(loan_id), BigInt(collateral_id), BigInt(amount)],
+        });
+        const { transactionHash } = await sendTransaction({
+          account: account,
+          transaction,
+        });
+        toast.success(transactionHash);
+      }, 7000);
+    }
+    return transactionHash;
+  } catch (error) {
+    toast.error("Transaction Failed");
+    console.log("error =======================", error);
+    return error;
+  }
+};
+
+export const invest = async (
+  account: any,
+  amount: number,
+  duration: number
+) => {
+  try {
+    //get usde abi and create contrat
+    const tx = approve({
+      contract: USDe,
+      spender: ethenacreditAddress,
+      amount: Number(amount),
+    });
+
+    const { transactionHash } = await sendTransaction({
+      account: account,
+      transaction: tx,
+    });
+
+    if (transactionHash) {
+      setTimeout(async () => {
+        const transaction = prepareContractCall({
+          contract: ethenaCreditContract,
+          method: "invest",
+          params: [BigInt(amount), BigInt(duration)],
+        });
+        const { transactionHash } = await sendTransaction({
+          account: account,
+          transaction,
+        });
+        toast.success(transactionHash);
+      }, 7000);
+    }
+    return transactionHash;
+  } catch (error) {
+    toast.error("Transaction Failed");
+    console.log("error =======================", error);
+    return error;
+  }
 };
 
 export const loanList = async (values: {
+  account: any;
   address: `0x${string}`;
   loanId: number;
 }) => {
-  const response = await readContract(config, {
-    address: chaincreditAddress,
-    abi: chaincreditAbi,
-    functionName: "loanList",
-    args: [values.address, BigInt(values.loanId)],
-  });
+  try {
+    const transaction = prepareContractCall({
+      contract: ethenaCreditContract,
+      method: "loanList",
+      params: [values.account.address, BigInt(values.loanId)],
+    });
 
-  return response;
-  
+    const { transactionHash } = await sendTransaction({
+      account: values.account,
+      transaction,
+    });
+
+    return transactionHash;
+  } catch (error) {
+    toast.error("Transaction Failed");
+    console.log("error =======================", error);
+    return error;
+  }
 };
 
-export const getLoanRequestList = async (values: {
+export const investorList = async (values: {
+  account: any;
   address: `0x${string}`;
-  requestId: number;
+  investment_id: number;
 }) => {
-  const response = await readContract(config, {
-    address: chaincreditAddress,
-    abi: chaincreditAbi,
-    functionName: "requestList",
-    args: [values.address, BigInt(values.requestId)],
-  });
+  try {
+    const transaction = prepareContractCall({
+      contract: ethenaCreditContract,
+      method: "investorList",
+      params: [values.account.address, BigInt(values.investment_id)],
+    });
 
-  return response;
+    const { transactionHash } = await sendTransaction({
+      account: values.account,
+      transaction,
+    });
+
+    return transactionHash;
+  } catch (error) {
+    toast.error("Transaction Failed");
+    console.log("error =======================", error);
+    return error;
+  }
 };
-
 
 export const collateralList = async (values: {
+  account: any;
   address: `0x${string}`;
-  property_RegId: number;
+  collateral_id: number;
 }) => {
-  const response = await readContract(config, {
-    address: chaincreditAddress,
-    abi: chaincreditAbi,
-    functionName: "getCollateral",
-    args: [values.address, BigInt(values.property_RegId)],
-  });
-  return response;
+  try {
+    const transaction = prepareContractCall({
+      contract: ethenaCreditContract,
+      method: "collateralList",
+      params: [values.account.address, BigInt(values.collateral_id)],
+    });
+
+    const { transactionHash } = await sendTransaction({
+      account: values.account,
+      transaction,
+    });
+
+    return transactionHash;
+  } catch (error) {
+    toast.error("Transaction Failed");
+    console.log("error =======================", error);
+    return error;
+  }
 };
 
-// Registrar
+const url = "https://11155111.rpc.thirdweb.com/";
+export const providerLink = new JsonRpcProvider(url);
+
+export const ethenaContract = new ethers.Contract(
+  ethenacreditAddress,
+  ethenacreditAbi,
+  providerLink
+);
 
 
-export const verificationRequest = async (values: {
-  p_owner: `0x${string}`;
-  property_RegId: number;
-  survey_zip_code: number;
-  survey_number: number;
-}) => {
-  const response = await writeContract(config, {
-    address: registrarAddresses,
-    abi: registrarAbi,
-    functionName: "verification_request",
-    args: [
-      values.p_owner,
-      BigInt(values.property_RegId),
-      BigInt(values.survey_zip_code),
-      BigInt(values.survey_number),
-    ],
-  });
-  return response;
-};
-
-export const transferAsset = async (values: {
-  tokenId: number;
-  newOwner: `0x${string}`;
-  property_RegId: number;
-}) => {
-  const response = await writeContract(config, {
-    address: registrarAddresses,
-    abi: registrarAbi,
-    functionName: "transferAsset",
-    args: [
-      BigInt(values.tokenId),
-      values.newOwner,
-      BigInt(values.property_RegId),
-    ],
-  });
-  return response;
-};
-
-export const assets = async (values: { address: `0x${string}`; assetId: number }) => {
-  const response = await readContract({
-    address: registrarAddresses,
-    abi: registrarAbi,
-    functionName: "assets",
-    args: [values.address, BigInt(values.assetId)],
-  });
-  return response;
-};
-
-//Lender 
-
-export const loanRequestLender = async (values: {
-  amount: number;
-  property_RegId: number;
-}) => {
-  const response = await writeContract(config, {
-    address: chaincreditAddress,
-    abi: chaincreditAbi,
-    functionName: "loanRequest",
-    args: [BigInt(values.amount), BigInt(values.property_RegId)],
-  });
-  return response;
-};
-
-export const createLoanLender = async (values: {
-  borrower: `0x${string}`;
-  loan_amount_term: number;
-  credit_history: number;
-  approved_amount: number;
-  applicant_biz_income: number;
-  property_RegId: number;
-  biz_id: string;
-  payment_type: number;
-}) => {
-  const response = await writeContract(config, {
-    address: chaincreditAddress,
-    abi: chaincreditAbi,
-    functionName: "create_loan",
-    args: [
-      values.borrower,
-      values.loan_amount_term,
-      values.credit_history,
-      BigInt(values.approved_amount),
-      BigInt(values.applicant_biz_income),
-      BigInt(values.property_RegId),
-      values.biz_id,
-      values.payment_type,
-    ],
-  });
-  return response;
-};
 
 
-export const getCompany = async (values: {
-  borrower: `0x${string}`;
-}) => {
-  const response = await readContract(config, {
-    address: chaincreditAddress,
-    abi: chaincreditAbi,
-    functionName: "getCompany",
-    args: [values.borrower],
-  });
-  return response;
-};
+
 
 
 

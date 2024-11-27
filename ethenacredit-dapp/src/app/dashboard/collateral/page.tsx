@@ -1,5 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-
+import { useEffect, useState } from "react";
+import { ethenaContract } from "@/util";
 import * as React from "react";
 import {
   ColumnDef,
@@ -35,76 +37,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { BigNumberish } from "ethers";
 import Link from "next/link";
 
-const data: Loan[] = [
-  {
-    id: "m5gr84i9",
-    amount: 316,
-    approved_amount: 316,
-    status: "success",
-    borrower: "ken99@yahoo.com",
-    loan_amount_period: "6 months",
-  },
-  {
-    id: "3u1reuv4",
-    amount: 242,
-    approved_amount: 316,
-    status: "success",
-    borrower: "Abe45@gmail.com",
-    loan_amount_period: "6 months",
-  },
-  {
-    id: "derv1ws0",
-    amount: 837,
-    approved_amount: 316,
-    status: "processing",
-    borrower: "Monserrat44@gmail.com",
-    loan_amount_period: "6 months",
-  },
-  {
-    id: "5kma53ae",
-    amount: 874,
-    approved_amount: 316,
-    status: "success",
-    borrower: "Silas22@gmail.com",
-    loan_amount_period: "6 months",
-  },
-  {
-    id: "bhqecj4p",
-    amount: 721,
-    approved_amount: 316,
-    status: "failed",
-    borrower: "carmella@hotmail.com",
-    loan_amount_period: "6 months",
-  },
-];
-
-export type ICollateral = {
-    id: number;
-    acres: number;
-    documenturl: string;
-    price: number;
-    property_RegId: number;
-    survey_zip_code: number;
-    survey_number: number;
-    property_type: string;
-    property_area: string;
-    prop_accessment_per_acre: number;
-    status: "pending"  | "verified" | "failed";
-};
-
-
-export type Loan = {
-  id: string;
-  amount: number;
-  approved_amount: number;
-  status: "pending" | "processing" | "success" | "failed";
+export type Collateral = {
+  id: any;
   borrower: string;
-  loan_amount_period: string;
+  amount: BigNumberish;
+  active_loan: boolean;
+  existed: boolean;
 };
 
-export const columns: ColumnDef<Loan>[] = [
+const columns: ColumnDef<Collateral>[] = [
   {
     id: "select",
     header: ({ table }) => (
@@ -128,13 +72,6 @@ export const columns: ColumnDef<Loan>[] = [
     enableHiding: false,
   },
   {
-    accessorKey: "status",
-    header: "Status",
-    cell: ({ row }) => (
-      <div className="capitalize">{row.getValue("status")}</div>
-    ),
-  },
-  {
     accessorKey: "borrower",
     header: ({ column }) => {
       return (
@@ -142,60 +79,38 @@ export const columns: ColumnDef<Loan>[] = [
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Wallet Address
+          Owner
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
     },
     cell: ({ row }) => (
-      <div className="lowercase px-4">{row.getValue("borrower")}</div>
+      <div
+        onClick={() =>
+          navigator.clipboard.writeText(`${row.getValue("borrower")}`)
+        }
+        className="cursor-pointer px-4 lowercase"
+      >
+        {row.getValue("borrower")}
+      </div>
     ),
   },
   {
     accessorKey: "amount",
-    header: () => <div className="text-right">Amount</div>,
+    header: () => <div className="text-right">USDe Amount</div>,
     cell: ({ row }) => {
-      const amount = parseFloat(row.getValue("amount"));
-
-      // Format the amount as a dollar amount
-      const formatted = new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-      }).format(amount);
-
-      return <div className="text-right font-medium">{formatted}</div>;
-    },
-  },
-  {
-    accessorKey: "approved_amount",
-    header: () => <div className="text-right">Approved amount</div>,
-    cell: ({ row }) => {
-      const approved_amount = parseFloat(row.getValue("approved_amount"));
-
-      // Format the amount as a dollar amount
-      const formatted = new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-      }).format(approved_amount);
-
-      return <div className="text-right font-medium">{formatted}</div>;
-    },
-  },
-  //start
-  {
-    accessorKey: "loan_amount_period",
-    header: ({ column }) => {
       return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Loan Amount Period
-        </Button>
+        <div className="text-right font-medium">
+          {`${row.getValue("amount")}`}{" "}
+        </div>
       );
     },
+  },
+  {
+    accessorKey: "active_loan",
+    header: "Loan Status",
     cell: ({ row }) => (
-      <div className="lowercase px-4">{row.getValue("loan_amount_period")}</div>
+      <div className="capitalize">{row.getValue("active_loan") ? "Yes" : "No"}</div>
     ),
   },
   //end
@@ -203,7 +118,7 @@ export const columns: ColumnDef<Loan>[] = [
     id: "actions",
     enableHiding: false,
     cell: ({ row }) => {
-      const loan = row.original;
+      const request = row.original;
 
       return (
         <DropdownMenu>
@@ -219,13 +134,23 @@ export const columns: ColumnDef<Loan>[] = [
           >
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(loan.id)}
+              onClick={() => navigator.clipboard.writeText(`${request.id}`)}
             >
-              Copy Loan ID
+              Copy Collateral ID
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>View customer</DropdownMenuItem>
-            <DropdownMenuItem>View loan details</DropdownMenuItem>
+            <DropdownMenuItem>
+              <Link href={`/dashboard/loans/request-loan/${request.id}`}>
+                Request For Loan
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Link
+                href={`/dashboard/collateral/collateral-detail/${request.id}`}
+              >
+                View collateral details
+              </Link>
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       );
@@ -233,7 +158,38 @@ export const columns: ColumnDef<Loan>[] = [
   },
 ];
 
-const Collateral = () => {
+const Collaterals = () => {
+
+  const [data, setProperties] = useState<any>([]);
+
+  const queryRwaEvents = React.useCallback(async () => {
+    const events = await ethenaContract.queryFilter("collateralEvent");
+    const filterVal: Collateral[] = [];
+    events.map(
+      (event: {
+        args: {
+          collateral_id: any;
+          borrower: string;
+          amount: BigNumberish;
+          active_loan: boolean;
+          existed: boolean;
+        };
+      }) => {
+        return (
+          event.args &&
+          filterVal.push({
+            id: event.args.collateral_id,
+            borrower: event.args.borrower,
+            amount: event.args.amount,
+            active_loan: event.args.active_loan,
+            existed: event.args.existed,
+          })
+        );
+      }
+    );
+    setProperties(filterVal);
+  }, []);
+
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
@@ -241,6 +197,10 @@ const Collateral = () => {
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
+
+  useEffect(() => {
+    queryRwaEvents();
+  }, [data, queryRwaEvents]);
 
   const table = useReactTable({
     data,
@@ -262,144 +222,155 @@ const Collateral = () => {
   });
 
   return (
-    <div className="w-full ml-20">
+    <div
+      className="ml-10 mr-10 text-white"
+      style={{ width: "-webkit-fill-available" }}
+    >
       <div className="flex justify-between">
-        <div>
-          {" "}
-          <h1 className="p-4 text-3xl">Collaterals</h1>
-        </div>
-        <div className="p-8">
-          {" "}
-          <Link
-            href="/dashboard/collateral/add-collateral"
-            className="p-3 text-1xl border border-slate-400 rounded-lg"
-          >
-            Add Collateral
-          </Link>
-        </div>
+        <h1 className="p-4 text-3xl">Collaterals</h1>
+        <Link
+          href="/dashboard/collateral/add-collateral"
+          className="p-2 text-1xl border border-primary rounded-lg h-11"
+        >
+          Add Collateral
+        </Link>
       </div>
-      <div className="flex items-center py-4">
-        <Input
-          placeholder="Filter borrower..."
-          value={
-            (table.getColumn("borrower")?.getFilterValue() as string) ?? ""
-          }
-          onChange={(event) =>
-            table.getColumn("borrower")?.setFilterValue(event.target.value)
-          }
-          className="max-w-sm border-primary"
-        />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              className="ml-auto border-primary rounded-sm"
-            >
-              Columns <ChevronDown className="ml-2 h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="end"
-            className="border backdrop-blur-xl bg-sky-700/30 border-primary"
-          >
-            {table
-              .getAllColumns()
-              .filter((column) => column.getCanHide())
-              .map((column) => {
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) =>
-                      column.toggleVisibility(!!value)
-                    }
+
+      <div
+        //className={styles.content}
+        style={{ width: "-webkit-fill-available" }}
+      >
+        <div className="mx-auto">
+          <div className="p-4">
+            <h1 className="">All collateral</h1>
+            <div className="flex items-center py-4">
+              <Input
+                placeholder="Filter owner ..."
+                value={
+                  (table.getColumn("borrower")?.getFilterValue() as string) ??
+                  ""
+                }
+                onChange={(event) =>
+                  table
+                    .getColumn("borrower")
+                    ?.setFilterValue(event.target.value)
+                }
+                className="max-w-sm border-primary"
+              />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="ml-auto rounded-sm border-primary"
                   >
-                    {column.id}
-                  </DropdownMenuCheckboxItem>
-                );
-              })}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-      <div className="rounded-md border-primary">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
-                  );
-                })}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
+                    Columns <ChevronDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  className="border backdrop-blur-xl bg-sky-700/30 border-primary"
                 >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
+                  {table
+                    .getAllColumns()
+                    .filter((column) => column.getCanHide())
+                    .map((column) => {
+                      return (
+                        <DropdownMenuCheckboxItem
+                          key={column.id}
+                          className="capitalize"
+                          checked={column.getIsVisible()}
+                          onCheckedChange={(value) =>
+                            column.toggleVisibility(!!value)
+                          }
+                        >
+                          {column.id}
+                        </DropdownMenuCheckboxItem>
+                      );
+                    })}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            <div className="rounded-md border-primary">
+              <Table>
+                <TableHeader>
+                  {table.getHeaderGroups().map((headerGroup) => (
+                    <TableRow key={headerGroup.id}>
+                      {headerGroup.headers.map((header) => {
+                        return (
+                          <TableHead key={header.id}>
+                            {header.isPlaceholder
+                              ? null
+                              : flexRender(
+                                  header.column.columnDef.header,
+                                  header.getContext()
+                                )}
+                          </TableHead>
+                        );
+                      })}
+                    </TableRow>
                   ))}
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
+                </TableHeader>
+                <TableBody>
+                  {table.getRowModel().rows?.length ? (
+                    table.getRowModel().rows.map((row) => (
+                      <TableRow
+                        key={row.id}
+                        data-state={row.getIsSelected() && "selected"}
+                      >
+                        {row.getVisibleCells().map((cell) => (
+                          <TableCell key={cell.id}>
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext()
+                            )}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={columns.length}
+                        className="h-24 text-center"
+                      >
+                        No results.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+            <div className="flex items-center justify-end space-x-2 py-4">
+              <div className="text-muted-foreground flex-1 text-sm">
+                {table.getFilteredSelectedRowModel().rows.length} of{" "}
+                {table.getFilteredRowModel().rows.length} row(s) selected.
+              </div>
+              <div className="space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => table.previousPage()}
+                  disabled={!table.getCanPreviousPage()}
+                  className="border-primary"
                 >
-                  No results.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-      <div className="flex items-center justify-end space-x-2 py-4">
-        <div className="flex-1 text-sm text-muted-foreground">
-          {table.getFilteredSelectedRowModel().rows.length} of{" "}
-          {table.getFilteredRowModel().rows.length} row(s) selected.
-        </div>
-        <div className="space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-            className="border-primary"
-          >
-            Previous
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-            className="border-primary"
-          >
-            Next
-          </Button>
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => table.nextPage()}
+                  disabled={!table.getCanNextPage()}
+                  className="border-primary"
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
-export default Collateral;
+export default Collaterals;

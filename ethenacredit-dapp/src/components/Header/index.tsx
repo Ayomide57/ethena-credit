@@ -22,9 +22,9 @@ const Header = () => {
             <div className={styles.header}>
               <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-5 pr-8 pl-8 ml-6">
                 <Image
-                  src="/chaincredit.png"
-                  alt="ChainCredit Logo"
-                  height="170"
+                  src="/ethenacredit.png"
+                  alt="EthenaCredit Logo"
+                  height="150"
                   width="250"
                 />
               </div>
@@ -32,11 +32,11 @@ const Header = () => {
                 <Link className={styles.menu} href={"/"}>
                   Home
                 </Link>
-                <Link className={styles.menu} href={"/lender"}>
-                  Lender
+                <Link className={styles.menu} href={"$"}>
+                  About
                 </Link>
-                <Link href={"/registrar"} className={styles.menu}>
-                  Registrar
+                <Link href={"#"} className={styles.menu}>
+                  Blog
                 </Link>
                 <ConnectButton client={client} />
               </nav>
@@ -44,22 +44,24 @@ const Header = () => {
             <div className={styles.headerInfo}>
               <h4>Revolutionizing Lending</h4>
               <h2>
-                Blockchain-<span>Based</span>{" "}
+                Blockchain-<span>Based UnderCollateralise</span>{" "}
               </h2>
               <h1>
-                Platform with Real-World <br /> Asset Collateral
+                Platform with Real-World And Digital <br /> Asset As Collateral
               </h1>
               <p>
                 Empowering Businesses with Transparent, Efficient, and Secure
                 Loans
               </p>
-              <CustomButton
-                value="Get Loan"
-                type={"button"}
-                style={{ marginBottom: 20, marginTop: 40 }}
-                disabled={false}
-                onClick={() => {}}
-              />
+              <Link href={"/dashboard/profile"}>
+                <CustomButton
+                  value="Get Loan"
+                  type={"button"}
+                  style={{ marginBottom: 20, marginTop: 40 }}
+                  disabled={false}
+                  onClick={() => {}}
+                />
+              </Link>
             </div>
           </div>
           <div className={styles.header_bottom_wrapper}>
@@ -70,7 +72,7 @@ const Header = () => {
                     Join the Future of <br />
                     Lending
                   </h6>
-                  <p>Get Started with ChainCredit Now</p>
+                  <p>Get Started with EthenaCredit Now</p>
                 </div>
               </div>
             </div>
@@ -82,8 +84,8 @@ const Header = () => {
           <div className={styles.header}>
             <div className={styles.logo2}>
               <Image
-                src="/chaincredit.png"
-                alt="ChainCredit Logo"
+                src="/ethenacredit.png"
+                alt="EthenaCredit Logo"
                 height="150"
                 width="203"
               />
@@ -95,11 +97,11 @@ const Header = () => {
               <Link className={styles.menu} href={"/"}>
                 Home
               </Link>
-              <Link className={styles.menu} href={"/lender"}>
-                Lender
+              <Link className={styles.menu} href={"#"}>
+                About
               </Link>
-              <Link href={"/registrar"} className={styles.menu}>
-                Registrar
+              <Link href={"#"} className={styles.menu}>
+                Blog
               </Link>
               <ConnectButton client={client} />
             </nav>

@@ -6,9 +6,10 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@pythnetwork/pyth-sdk-solidity/IPyth.sol";
 import "@pythnetwork/pyth-sdk-solidity/PythStructs.sol";
+import {console} from "forge-std/Script.sol";
 
 
-contract EthenaCredit is Ownable {
+contract EthenaCreditBle is Ownable {
     /**
      * @dev This contract allows user to register, add collateral and apply for 
      * loans with the collateral after verification
@@ -166,6 +167,22 @@ contract EthenaCredit is Ownable {
         uint256 amount;
         uint256 collateral_id; 
     }
+
+    struct SendParam {
+        uint32 dstEid; // Destination endpoint ID.
+        bytes32 to; // Recipient address.
+        uint256 amountLD; // Amount to send in local decimals.
+        uint256 minAmountLD; // Minimum amount to send in local decimals.
+        bytes extraOptions; // Additional options supplied by the caller to be used in the LayerZero message.
+        bytes composeMsg; // The composed message for the send() operation.
+        bytes oftCmd; // The OFT command to be executed, unused in default OFT implementations.
+    }
+
+    struct MessagingFee {
+        uint256 nativeFee; // Fee amount in native gas token.
+        uint256 lzTokenFee; // Fee amount in ZRO token.
+    }
+
 
     mapping(address => mapping(uint256 => Loan)) public loanList;
     mapping(address => mapping(uint256 => InvestorInfo)) public investorList;
@@ -442,7 +459,6 @@ contract EthenaCredit is Ownable {
      * only owner can call this function
      */
 
-
     function cooldownAssetsUSDe(uint256 _amount) onlyOwner public returns(bool success){
         (bool sent, bytes memory data) = s_susde_token_address.call(abi.encodeWithSignature("cooldownAssets(uint256)", _amount));
         //console.logBytes(data);
@@ -476,6 +492,47 @@ contract EthenaCredit is Ownable {
         uint usde_eth_value = 1 ether / usdeValue ;
         return usde_eth_value;
     }
+
+
+    function quoteSend(
+        uint32 _dstEid, 
+        bytes32 _to, 
+        uint256 _amountLD, 
+        uint256 _minAmountLD, 
+        bytes memory _extraOptions, 
+        bytes memory _composeMsg, 
+        bytes memory _oftCmd, 
+        bool _payInLzToken
+    ) public returns(bool success){
+        SendParam memory sendParam = SendParam(_dstEid, _to, _minAmountLD, _amountLD, _extraOptions, _composeMsg, _oftCmd);
+        (bool sent, bytes memory data) = s_usde_token_address.call(
+            abi.encodeWithSignature("quoteSend((uint32, bytes32, uint256, uint256, bytes, bytes, bytes), bool)", 
+            sendParam, _payInLzToken
+            ));
+        console.logBytes(data);
+        return sent;
+    }
+
+    function send(
+        uint32 _dstEid, 
+        bytes32 _to, 
+        uint256 _amountLD, 
+        uint256 _minAmountLD, 
+        bytes memory _extraOptions, 
+        bytes memory _composeMsg, 
+        bytes memory _oftCmd,  
+        address _dstAddress     
+    ) onlyOwner public returns(bool success){
+        SendParam memory sendParam = SendParam(_dstEid, _to, _minAmountLD, _amountLD,_extraOptions ,_composeMsg,_oftCmd);
+        //MessagingFee memory fee = this.quoteSend(_dstEid, _to, _minAmountLD, _amountLD,_extraOptions ,_composeMsg,_oftCmd, _payInLzToken); 
+        (bool sent, bytes memory data) = s_usde_token_address.call(
+            abi.encodeWithSignature("send((uint32, bytes32, uint256, uint256, bytes, bytes, bytes), (uint256, uint256),address)", 
+            sendParam, _dstAddress, _dstAddress
+            ));
+        console.logBytes(data);
+        return sent;
+    }
+
 
     
 

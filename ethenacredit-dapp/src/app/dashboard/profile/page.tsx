@@ -1,12 +1,8 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { getCompany } from "@/util";
-import { getAccount } from "@wagmi/core";
 //import Link from "next/link";
-import { config } from "@/util/config";
 import Image from "next/image";
-import Modal from "@/components/Modal";
-import Register from "../register/page";
+import { useActiveAccount } from "thirdweb/react";
 
  export interface IUserData {
    company: `0x${string}`;
@@ -19,43 +15,28 @@ import Register from "../register/page";
 
 const Profile = () => {
 
-  const [account, setAccount] = useState<`0x${string}`>();
-  const [userData, setUserData] = useState<IUserData | unknown>(null);
+  //const [userData, setUserData] = useState<IUserData | unknown>(null);
+  const smartAccount = useActiveAccount();
 
 
-  const UpdateUI = useCallback( async () => {
-    const accountSource = getAccount(config);
-    setAccount(accountSource?.address);
-    console.log(account);
-    if (account) {
-      const response = getCompany({ borrower: account });
-      setUserData(await response);
+  /**const UpdateUI = useCallback(async () => {
+    if (smartAccount) {
+      //const response = getCompany({ borrower: account });
+      //setUserData(await response);
     }
-  }, [account]);
+  }, [smartAccount]);**/
 
   useEffect(() => {
-    UpdateUI();
-    console.log(userData);
-  }, [UpdateUI, account, userData]);
-
+    //UpdateUI();
+    //}, [UpdateUI, userData]);
+  },[]);
     return (
       <>
         <div className="w-full px-4 ml-10">
           <div className="relative flex flex-col min-w-0 break-words w-full mb-6 shadow-xl rounded-lg mt-16 backdrop-blur-xl bg-sky-700/10">
-            {userData != null && account && (
+            {/**userData != null && smartAccount?.address && (**/
               <div className="px-6">
                 <div className="flex flex-wrap justify-center">
-                  <div className="w-full px-4 flex justify-center">
-                    <div className="relative">
-                      <Image
-                        alt="..."
-                        src="https://demos.creative-tim.com/notus-js/assets/img/team-2-800x800.jpg"
-                        width={250}
-                        height={250}
-                        className="shadow-xl rounded-full h-auto align-middle border-none -m-16 mx-auto w-40"
-                      />
-                    </div>
-                  </div>
                   <div className="w-full px-4 text-center mt-20">
                     <div className="flex justify-center py-4 lg:pt-4 pt-8">
                       <div className="mr-4 p-3 text-center">
@@ -83,23 +64,7 @@ const Profile = () => {
                     </div>
                   </div>
                 </div>
-                <div className="text-center mt-12">
-                  <h3 className="text-xl font-semibold leading-normal mb-2 text-blueGray-700 mb-2">
-                    {userData?.owner_name}
-                  </h3>
-                  <div className="text-sm leading-normal mt-0 mb-2 text-blueGray-400 font-bold uppercase">
-                    <i className="fas fa-map-marker-alt mr-2 text-lg text-blueGray-400"></i>
-                    {userData?.name}
-                  </div>
-                  <div className="mb-2 text-blueGray-600 mt-10">
-                    <i className="fas fa-briefcase mr-2 text-lg text-blueGray-400"></i>
-                    {userData?.phone_number}
-                  </div>
-                  <div className="mb-2 text-blueGray-600">
-                    <i className="fas fa-university mr-2 text-lg text-blueGray-400"></i>
-                    {userData?.location}
-                  </div>
-                </div>
+
                 <div className="mt-10 py-10 border-t border-blueGray-200 text-center">
                   <div className="flex flex-wrap justify-center">
                     <div className="w-full lg:w-9/12 px-4">
@@ -120,16 +85,10 @@ const Profile = () => {
                   </div>
                 </div>
               </div>
-            )}
+              //)}
+            }
           </div>
         </div>
-        {userData &&
-          userData?.company ==
-            "0x0000000000000000000000000000000000000000" && (
-              <Modal>
-                <Register />
-              </Modal>
-            )}
       </>
     );
 };

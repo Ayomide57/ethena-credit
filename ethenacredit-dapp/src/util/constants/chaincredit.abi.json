@@ -2,7 +2,22 @@
   {
     "type": "constructor",
     "inputs": [
-      { "name": "_loan_rate", "type": "uint8", "internalType": "uint8" },
+      {
+        "name": "_usde_token_address",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_susde_token_address",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_pyth_contract",
+        "type": "address",
+        "internalType": "address"
+      },
+      { "name": "_priceFeedId", "type": "bytes32", "internalType": "bytes32" },
       { "name": "_investor_rate", "type": "uint8", "internalType": "uint8" }
     ],
     "stateMutability": "nonpayable"
@@ -10,211 +25,74 @@
   { "type": "receive", "stateMutability": "payable" },
   {
     "type": "function",
-    "name": "addColaterals",
-    "inputs": [
-      { "name": "_acres", "type": "uint8", "internalType": "uint8" },
-      { "name": "_document_url", "type": "string", "internalType": "string" },
-      { "name": "_price", "type": "uint256", "internalType": "uint256" },
-      {
-        "name": "_property_RegId",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "_survey_zip_code",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "_survey_number",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "_property_type",
-        "type": "string",
-        "internalType": "string"
-      },
-      {
-        "name": "_property_area",
-        "type": "string",
-        "internalType": "string"
-      },
-      {
-        "name": "_prop_accessment_per_acre",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [{ "name": "success", "type": "bool", "internalType": "bool" }],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "companyList",
-    "inputs": [{ "name": "", "type": "address", "internalType": "address" }],
-    "outputs": [
-      { "name": "company", "type": "address", "internalType": "address" },
-      { "name": "name", "type": "string", "internalType": "string" },
-      { "name": "owner_name", "type": "string", "internalType": "string" },
-      { "name": "location", "type": "string", "internalType": "string" },
-      { "name": "phone_number", "type": "string", "internalType": "string" },
-      { "name": "existed", "type": "bool", "internalType": "bool" }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "create_loan",
-    "inputs": [
-      { "name": "_borrower", "type": "address", "internalType": "address" },
-      {
-        "name": "_loan_amount_term",
-        "type": "uint8",
-        "internalType": "uint8"
-      },
-      { "name": "_credit_history", "type": "uint8", "internalType": "uint8" },
-      {
-        "name": "_approved_amount",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "_applicant_biz_income",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "_property_RegId",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      { "name": "_biz_id", "type": "string", "internalType": "string" },
-      {
-        "name": "_paymentType",
-        "type": "uint8",
-        "internalType": "enum ChainCreditContract.LoanPaymentType"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "current_eth_price",
+    "name": "MAX_COLLATERAL_AMOUNT",
     "inputs": [],
     "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
     "stateMutability": "view"
   },
   {
     "type": "function",
-    "name": "getAmountToBePaid",
-    "inputs": [
-      { "name": "_borrower", "type": "address", "internalType": "address" },
-      { "name": "_loan_id", "type": "uint256", "internalType": "uint256" }
-    ],
+    "name": "MAX_LOAN_DURATION",
+    "inputs": [],
     "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
     "stateMutability": "view"
   },
   {
     "type": "function",
-    "name": "getCollateral",
-    "inputs": [
-      { "name": "_borrower", "type": "address", "internalType": "address" },
-      {
-        "name": "_property_RegId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "tuple",
-        "internalType": "struct ChainCreditContract.CollateralInfo",
-        "components": [
-          {
-            "name": "verification_status",
-            "type": "bool",
-            "internalType": "bool"
-          },
-          { "name": "status", "type": "bool", "internalType": "bool" },
-          { "name": "exist", "type": "bool", "internalType": "bool" },
-          {
-            "name": "document_url",
-            "type": "string",
-            "internalType": "string"
-          },
-          {
-            "name": "borrower",
-            "type": "address",
-            "internalType": "address"
-          },
-          { "name": "acres", "type": "uint8", "internalType": "uint8" },
-          { "name": "price", "type": "uint256", "internalType": "uint256" },
-          {
-            "name": "property_RegId",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "survey_zip_code",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "survey_number",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "prop_accessment_per_acre",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "property_type",
-            "type": "string",
-            "internalType": "string"
-          },
-          {
-            "name": "property_area",
-            "type": "string",
-            "internalType": "string"
-          }
-        ]
-      }
-    ],
+    "name": "MIN_COLLATERAL_AMOUNT",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
     "stateMutability": "view"
   },
   {
     "type": "function",
-    "name": "getCompany",
+    "name": "_collateral_ids",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "_investment_ids",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "_loan_ids",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "_loan_repayment_history_ids",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "addCollateral",
     "inputs": [
-      { "name": "_borrower", "type": "address", "internalType": "address" }
+      { "name": "_amount", "type": "uint256", "internalType": "uint256" }
+    ],
+    "outputs": [{ "name": "success", "type": "bool", "internalType": "bool" }],
+    "stateMutability": "payable"
+  },
+  {
+    "type": "function",
+    "name": "collateralList",
+    "inputs": [
+      { "name": "", "type": "address", "internalType": "address" },
+      { "name": "", "type": "uint256", "internalType": "uint256" }
     ],
     "outputs": [
-      {
-        "name": "",
-        "type": "tuple",
-        "internalType": "struct ChainCreditContract.CompanyInfo",
-        "components": [
-          { "name": "company", "type": "address", "internalType": "address" },
-          { "name": "name", "type": "string", "internalType": "string" },
-          {
-            "name": "owner_name",
-            "type": "string",
-            "internalType": "string"
-          },
-          { "name": "location", "type": "string", "internalType": "string" },
-          {
-            "name": "phone_number",
-            "type": "string",
-            "internalType": "string"
-          },
-          { "name": "existed", "type": "bool", "internalType": "bool" }
-        ]
-      }
+      { "name": "borrower", "type": "address", "internalType": "address" },
+      { "name": "amount", "type": "uint256", "internalType": "uint256" },
+      { "name": "active_loan", "type": "bool", "internalType": "bool" },
+      { "name": "existed", "type": "bool", "internalType": "bool" }
     ],
     "stateMutability": "view"
   },
@@ -222,19 +100,16 @@
     "type": "function",
     "name": "getInvestorInfo",
     "inputs": [
-      { "name": "_investor", "type": "address", "internalType": "address" }
+      { "name": "_investor", "type": "address", "internalType": "address" },
+      { "name": "_investment_id", "type": "uint256", "internalType": "uint256" }
     ],
     "outputs": [
       {
         "name": "",
         "type": "tuple",
-        "internalType": "struct ChainCreditContract.InvestorInfo",
+        "internalType": "struct EthenaCredit.InvestorInfo",
         "components": [
-          {
-            "name": "investor",
-            "type": "address",
-            "internalType": "address"
-          },
+          { "name": "investor", "type": "address", "internalType": "address" },
           {
             "name": "total_amount",
             "type": "uint256",
@@ -255,6 +130,7 @@
             "type": "uint256",
             "internalType": "uint256"
           },
+          { "name": "paid", "type": "bool", "internalType": "bool" },
           { "name": "existed", "type": "bool", "internalType": "bool" }
         ]
       }
@@ -272,64 +148,25 @@
       {
         "name": "",
         "type": "tuple",
-        "internalType": "struct ChainCreditContract.Loan",
+        "internalType": "struct EthenaCredit.Loan",
         "components": [
+          { "name": "loan_disbursed", "type": "bool", "internalType": "bool" },
+          { "name": "repaid", "type": "bool", "internalType": "bool" },
+          { "name": "existed", "type": "bool", "internalType": "bool" },
+          { "name": "borrower", "type": "address", "internalType": "address" },
+          { "name": "amount", "type": "uint256", "internalType": "uint256" },
           {
-            "name": "loan_state",
-            "type": "uint8",
-            "internalType": "enum ChainCreditContract.Status"
-          },
-          {
-            "name": "loan_payment_type",
-            "type": "uint8",
-            "internalType": "enum ChainCreditContract.LoanPaymentType"
-          },
-          {
-            "name": "loan_disbursed",
-            "type": "bool",
-            "internalType": "bool"
-          },
-          {
-            "name": "borrower",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "loan_amount_term",
-            "type": "uint8",
-            "internalType": "uint8"
-          },
-          {
-            "name": "credit_history",
-            "type": "uint8",
-            "internalType": "uint8"
-          },
-          {
-            "name": "property_RegId",
+            "name": "collateral_id",
             "type": "uint256",
             "internalType": "uint256"
           },
           { "name": "loan_id", "type": "uint256", "internalType": "uint256" },
-          {
-            "name": "approved_amount",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "applicant_biz_income",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
+          { "name": "duration", "type": "uint256", "internalType": "uint256" },
+          { "name": "due_date", "type": "uint256", "internalType": "uint256" },
           {
             "name": "total_amount_paid",
             "type": "uint256",
             "internalType": "uint256"
-          },
-          { "name": "biz_id", "type": "string", "internalType": "string" },
-          {
-            "name": "owners",
-            "type": "address[]",
-            "internalType": "address[]"
           }
         ]
       }
@@ -339,21 +176,23 @@
   {
     "type": "function",
     "name": "invest",
-    "inputs": [],
+    "inputs": [
+      { "name": "_amount", "type": "uint256", "internalType": "uint256" },
+      { "name": "_duration", "type": "uint256", "internalType": "uint256" }
+    ],
     "outputs": [{ "name": "success", "type": "bool", "internalType": "bool" }],
-    "stateMutability": "payable"
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
     "name": "investorList",
-    "inputs": [{ "name": "", "type": "address", "internalType": "address" }],
+    "inputs": [
+      { "name": "", "type": "address", "internalType": "address" },
+      { "name": "", "type": "uint256", "internalType": "uint256" }
+    ],
     "outputs": [
       { "name": "investor", "type": "address", "internalType": "address" },
-      {
-        "name": "total_amount",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
+      { "name": "total_amount", "type": "uint256", "internalType": "uint256" },
       {
         "name": "accumulated_interest",
         "type": "uint256",
@@ -369,6 +208,7 @@
         "type": "uint256",
         "internalType": "uint256"
       },
+      { "name": "paid", "type": "bool", "internalType": "bool" },
       { "name": "existed", "type": "bool", "internalType": "bool" }
     ],
     "stateMutability": "view"
@@ -381,46 +221,20 @@
       { "name": "", "type": "uint256", "internalType": "uint256" }
     ],
     "outputs": [
-      {
-        "name": "loan_state",
-        "type": "uint8",
-        "internalType": "enum ChainCreditContract.Status"
-      },
-      {
-        "name": "loan_payment_type",
-        "type": "uint8",
-        "internalType": "enum ChainCreditContract.LoanPaymentType"
-      },
       { "name": "loan_disbursed", "type": "bool", "internalType": "bool" },
+      { "name": "repaid", "type": "bool", "internalType": "bool" },
+      { "name": "existed", "type": "bool", "internalType": "bool" },
       { "name": "borrower", "type": "address", "internalType": "address" },
-      {
-        "name": "loan_amount_term",
-        "type": "uint8",
-        "internalType": "uint8"
-      },
-      { "name": "credit_history", "type": "uint8", "internalType": "uint8" },
-      {
-        "name": "property_RegId",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
+      { "name": "amount", "type": "uint256", "internalType": "uint256" },
+      { "name": "collateral_id", "type": "uint256", "internalType": "uint256" },
       { "name": "loan_id", "type": "uint256", "internalType": "uint256" },
-      {
-        "name": "approved_amount",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "applicant_biz_income",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
+      { "name": "duration", "type": "uint256", "internalType": "uint256" },
+      { "name": "due_date", "type": "uint256", "internalType": "uint256" },
       {
         "name": "total_amount_paid",
         "type": "uint256",
         "internalType": "uint256"
-      },
-      { "name": "biz_id", "type": "string", "internalType": "string" }
+      }
     ],
     "stateMutability": "view"
   },
@@ -429,11 +243,12 @@
     "name": "loanRequest",
     "inputs": [
       {
-        "name": "_property_RegId",
+        "name": "_collateral_id",
         "type": "uint256",
         "internalType": "uint256"
       },
-      { "name": "_amount", "type": "uint256", "internalType": "uint256" }
+      { "name": "_amount", "type": "uint256", "internalType": "uint256" },
+      { "name": "_duration", "type": "uint256", "internalType": "uint256" }
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
@@ -447,6 +262,13 @@
   },
   {
     "type": "function",
+    "name": "minimum_investment_period",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint32", "internalType": "uint32" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "owner",
     "inputs": [],
     "outputs": [{ "name": "", "type": "address", "internalType": "address" }],
@@ -456,32 +278,15 @@
     "type": "function",
     "name": "payLoan",
     "inputs": [
-      { "name": "_borrower", "type": "address", "internalType": "address" },
-      { "name": "_loan_id", "type": "uint256", "internalType": "uint256" }
+      { "name": "_loan_id", "type": "uint256", "internalType": "uint256" },
+      {
+        "name": "_collateral_id",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      { "name": "_amount", "type": "uint256", "internalType": "uint256" }
     ],
     "outputs": [{ "name": "success", "type": "bool", "internalType": "bool" }],
-    "stateMutability": "payable"
-  },
-  {
-    "type": "function",
-    "name": "paymentDisbursal",
-    "inputs": [
-      { "name": "_borrower", "type": "address", "internalType": "address" },
-      { "name": "_loan_id", "type": "uint256", "internalType": "uint256" }
-    ],
-    "outputs": [{ "name": "success", "type": "bool", "internalType": "bool" }],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "register",
-    "inputs": [
-      { "name": "_name", "type": "string", "internalType": "string" },
-      { "name": "_owner_name", "type": "string", "internalType": "string" },
-      { "name": "_location", "type": "string", "internalType": "string" },
-      { "name": "_phone_number", "type": "string", "internalType": "string" }
-    ],
-    "outputs": [{ "name": "", "type": "bool", "internalType": "bool" }],
     "stateMutability": "nonpayable"
   },
   {
@@ -493,30 +298,6 @@
   },
   {
     "type": "function",
-    "name": "requestList",
-    "inputs": [
-      { "name": "", "type": "address", "internalType": "address" },
-      { "name": "", "type": "uint256", "internalType": "uint256" }
-    ],
-    "outputs": [
-      {
-        "name": "verification_status",
-        "type": "bool",
-        "internalType": "bool"
-      },
-      { "name": "borrower", "type": "address", "internalType": "address" },
-      { "name": "amount", "type": "uint256", "internalType": "uint256" },
-      {
-        "name": "property_RegId",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      { "name": "request_id", "type": "uint256", "internalType": "uint256" }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "s_investor_rate",
     "inputs": [],
     "outputs": [{ "name": "", "type": "uint8", "internalType": "uint8" }],
@@ -524,9 +305,23 @@
   },
   {
     "type": "function",
-    "name": "s_loan_rate",
+    "name": "s_max_loan_rate",
     "inputs": [],
     "outputs": [{ "name": "", "type": "uint8", "internalType": "uint8" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "s_susde_token_address",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "address", "internalType": "address" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "s_usde_token_address",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "address", "internalType": "address" }],
     "stateMutability": "view"
   },
   {
@@ -540,56 +335,40 @@
   },
   {
     "type": "function",
-    "name": "updateLoan",
+    "name": "updatePrice",
     "inputs": [
-      { "name": "_borrower", "type": "address", "internalType": "address" },
-      { "name": "_loan_id", "type": "uint256", "internalType": "uint256" },
-      {
-        "name": "_status",
-        "type": "uint8",
-        "internalType": "enum ChainCreditContract.Status"
-      }
+      { "name": "amount", "type": "uint256", "internalType": "uint256" }
+    ],
+    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "withdrawCollateral",
+    "inputs": [
+      { "name": "_collateral_id", "type": "uint256", "internalType": "uint256" }
+    ],
+    "outputs": [{ "name": "success", "type": "bool", "internalType": "bool" }],
+    "stateMutability": "payable"
+  },
+  {
+    "type": "function",
+    "name": "withdrawInvestment",
+    "inputs": [
+      { "name": "_investment_id", "type": "uint256", "internalType": "uint256" }
     ],
     "outputs": [{ "name": "", "type": "bool", "internalType": "bool" }],
     "stateMutability": "nonpayable"
   },
   {
     "type": "function",
-    "name": "withdrawInvestment",
-    "inputs": [],
-    "outputs": [{ "name": "", "type": "bool", "internalType": "bool" }],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "event",
-    "name": "LoanRepaymentHistoryEvent",
+    "name": "withdrawLoan",
     "inputs": [
-      {
-        "name": "borrower",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "loan_id",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      },
-      {
-        "name": "loan_amount",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      },
-      {
-        "name": "loan_repayment_history_ids",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
-      }
+      { "name": "_loan_id", "type": "uint256", "internalType": "uint256" },
+      { "name": "_collateral_id", "type": "uint256", "internalType": "uint256" }
     ],
-    "anonymous": false
+    "outputs": [{ "name": "success", "type": "bool", "internalType": "bool" }],
+    "stateMutability": "nonpayable"
   },
   {
     "type": "event",
@@ -612,37 +391,31 @@
   },
   {
     "type": "event",
-    "name": "RegisterCompanyEvent",
+    "name": "collateralEvent",
     "inputs": [
       {
-        "name": "company",
+        "name": "borrower",
         "type": "address",
-        "indexed": true,
+        "indexed": false,
         "internalType": "address"
       },
       {
-        "name": "name",
-        "type": "string",
-        "indexed": true,
-        "internalType": "string"
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
       },
       {
-        "name": "owner_name",
-        "type": "string",
+        "name": "active_loan",
+        "type": "bool",
         "indexed": false,
-        "internalType": "string"
+        "internalType": "bool"
       },
       {
-        "name": "location",
-        "type": "string",
+        "name": "existed",
+        "type": "bool",
         "indexed": false,
-        "internalType": "string"
-      },
-      {
-        "name": "phone_number",
-        "type": "string",
-        "indexed": false,
-        "internalType": "string"
+        "internalType": "bool"
       }
     ],
     "anonymous": false
@@ -658,24 +431,6 @@
         "internalType": "address"
       },
       {
-        "name": "loanState",
-        "type": "uint8",
-        "indexed": false,
-        "internalType": "enum ChainCreditContract.Status"
-      },
-      {
-        "name": "loan_amount_term",
-        "type": "uint8",
-        "indexed": false,
-        "internalType": "uint8"
-      },
-      {
-        "name": "credit_history",
-        "type": "uint8",
-        "indexed": false,
-        "internalType": "uint8"
-      },
-      {
         "name": "loan_id",
         "type": "uint256",
         "indexed": true,
@@ -686,24 +441,6 @@
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
-      },
-      {
-        "name": "applicant_biz_income",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      },
-      {
-        "name": "biz_id",
-        "type": "string",
-        "indexed": false,
-        "internalType": "string"
-      },
-      {
-        "name": "_paymentType",
-        "type": "uint8",
-        "indexed": false,
-        "internalType": "enum ChainCreditContract.LoanPaymentType"
       }
     ],
     "anonymous": false
@@ -731,19 +468,13 @@
         "internalType": "uint256"
       },
       {
-        "name": "approved_amount",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
-      },
-      {
-        "name": "amount_in_usdt",
+        "name": "amount",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
       },
       {
-        "name": "amount_in_eth",
+        "name": "due_date",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
@@ -784,10 +515,47 @@
   },
   {
     "type": "event",
+    "name": "loanRepaymentHistoryEvent",
+    "inputs": [
+      {
+        "name": "borrower",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "_loan_id",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "loan_amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "loan_repayment_history_id",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
     "name": "loanRequestEvent",
     "inputs": [
       {
-        "name": "verification_status",
+        "name": "loan_disbursed",
+        "type": "bool",
+        "indexed": false,
+        "internalType": "bool"
+      },
+      {
+        "name": "repaid",
         "type": "bool",
         "indexed": false,
         "internalType": "bool"
@@ -795,7 +563,7 @@
       {
         "name": "borrower",
         "type": "address",
-        "indexed": false,
+        "indexed": true,
         "internalType": "address"
       },
       {
@@ -805,114 +573,34 @@
         "internalType": "uint256"
       },
       {
-        "name": "property_RegId",
+        "name": "collateral_id",
         "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      },
-      {
-        "name": "request_id",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "updateLoanEvent",
-    "inputs": [
-      {
-        "name": "status",
-        "type": "uint8",
-        "indexed": false,
-        "internalType": "enum ChainCreditContract.Status"
-      },
-      {
-        "name": "borrower",
-        "type": "address",
         "indexed": true,
-        "internalType": "address"
+        "internalType": "uint256"
       },
       {
         "name": "loan_id",
         "type": "uint256",
         "indexed": true,
         "internalType": "uint256"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "userCollateralEvent",
-    "inputs": [
-      {
-        "name": "verification_status",
-        "type": "bool",
-        "indexed": false,
-        "internalType": "bool"
       },
       {
-        "name": "status",
-        "type": "bool",
-        "indexed": false,
-        "internalType": "bool"
-      },
-      {
-        "name": "document_url",
-        "type": "string",
-        "indexed": true,
-        "internalType": "string"
-      },
-      {
-        "name": "borrower",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "price",
+        "name": "duration",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
       },
       {
-        "name": "property_RegId",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
-      },
-      {
-        "name": "survey_zip_code",
+        "name": "due_date",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
       },
       {
-        "name": "survey_number",
+        "name": "total_amount_paid",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
-      },
-      {
-        "name": "prop_accessment_per_acre",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      },
-      {
-        "name": "property_type",
-        "type": "string",
-        "indexed": false,
-        "internalType": "string"
-      },
-      {
-        "name": "property_area",
-        "type": "string",
-        "indexed": false,
-        "internalType": "string"
       }
     ],
     "anonymous": false
@@ -932,22 +620,53 @@
         "type": "uint256",
         "indexed": true,
         "internalType": "uint256"
+      },
+      {
+        "name": "paid",
+        "type": "bool",
+        "indexed": false,
+        "internalType": "bool"
       }
     ],
     "anonymous": false
   },
-  { "type": "error", "name": "CollateralDoesntExist", "inputs": [] },
-  { "type": "error", "name": "CollateralPreviouslyExist", "inputs": [] },
-  { "type": "error", "name": "CompanyAlreadyExisted", "inputs": [] },
-  { "type": "error", "name": "InsufficientFund", "inputs": [] },
-  { "type": "error", "name": "InvestorNotFound", "inputs": [] },
+  { "type": "error", "name": "ErrorAccountNotFound", "inputs": [] },
   {
     "type": "error",
-    "name": "LoanCannotBeDisburseUnitilStatusIsApprove",
+    "name": "ErrorAmountShouldBeBetweenMinimumAndMaximumAmount",
+    "inputs": [
+      { "name": "amount", "type": "uint256", "internalType": "uint256" }
+    ]
+  },
+  { "type": "error", "name": "ErrorCollateralDoesntExist", "inputs": [] },
+  {
+    "type": "error",
+    "name": "ErrorDurationMustBeLessThanOneYear",
     "inputs": []
   },
-  { "type": "error", "name": "NoLoanToDisburse", "inputs": [] },
-  { "type": "error", "name": "NotEligibleToWithDraw", "inputs": [] },
+  { "type": "error", "name": "ErrorInsufficientFund", "inputs": [] },
+  {
+    "type": "error",
+    "name": "ErrorInvestmentDurationMustMoreThanAMonth",
+    "inputs": []
+  },
+  { "type": "error", "name": "ErrorInvestmentRepaid", "inputs": [] },
+  { "type": "error", "name": "ErrorInvestorNotFound", "inputs": [] },
+  { "type": "error", "name": "ErrorLoanDisbursed", "inputs": [] },
+  { "type": "error", "name": "ErrorLoanIsYetToBeDisbursed", "inputs": [] },
+  { "type": "error", "name": "ErrorLoanNotRepaid", "inputs": [] },
+  { "type": "error", "name": "ErrorLoanRepaid", "inputs": [] },
+  { "type": "error", "name": "ErrorNotEligibleToWithDraw", "inputs": [] },
+  { "type": "error", "name": "ErrorTokenTranferFailed", "inputs": [] },
+  { "type": "error", "name": "ErrorUserAlreadyExisted", "inputs": [] },
+  {
+    "type": "error",
+    "name": "ErrorYouHaveExceededMaxLoanCollateralEligibility",
+    "inputs": [
+      { "name": "loan_amount", "type": "uint256", "internalType": "uint256" }
+    ]
+  },
+  { "type": "error", "name": "ErrorZeroAddressProvided", "inputs": [] },
   {
     "type": "error",
     "name": "OwnableInvalidOwner",
@@ -961,6 +680,5 @@
     "inputs": [
       { "name": "account", "type": "address", "internalType": "address" }
     ]
-  },
-  { "type": "error", "name": "ZeroAddressProvided", "inputs": [] }
+  }
 ]

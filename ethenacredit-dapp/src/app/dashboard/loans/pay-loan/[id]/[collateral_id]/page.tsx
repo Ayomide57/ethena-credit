@@ -3,23 +3,30 @@ import styles from "@/styles/Home.module.css";
 import CustomInput from "@/components/CustomInput";
 import CustomButton from "@/components/Button";
 import { Formik } from "formik";
-import { addCollateral } from "@/util";
+import { payLoan } from "@/util";
 //import { toast } from "react-hot-toast";
 import { useActiveAccount } from "thirdweb/react";
 
-const AddCollateral = () => {
+const PayLoan = ({
+  params,
+}: {
+  params: { id: string; collateral_id: string };
+}) => {
   const smartAccount = useActiveAccount();
 
-  const handleAddCollateralSubmit = (
+  const handlePayLoan = (
     values: {
       amount: number;
-      account: unknown;
     },
     setSubmitting: { (isSubmitting: boolean): void; (arg0: boolean): void }
   ) => {
     setTimeout(async () => {
-      values.account = smartAccount ? smartAccount : undefined;
-      const response: unknown = await addCollateral(values);
+      const response = await payLoan(
+        smartAccount,
+        values.amount,
+        Number(params.id),
+        Number(params.collateral_id)
+      );
       console.log(response);
       //if (response) toast.success(response);
       setSubmitting(false);
@@ -28,26 +35,20 @@ const AddCollateral = () => {
 
   return (
     <>
-      <div
-        className="container ml-20"
-        style={{ width: "-webkit-fill-available" }}
-      >
-        <h1 className="p-4 text-3xl">Collateral</h1>
+      <div className="container ml-16 mr-5">
+        <h1 className="p-4 text-3xl">Pay loan</h1>
         <div className={styles.content}>
           <div className="container mx-auto">
             <div className="p-4">
-              <h1 className="">Add your collateral</h1>
               <Formik
                 initialValues={{
                   amount: 0,
-                  account: smartAccount ? smartAccount : undefined,
                 }}
                 onSubmit={(values, { setSubmitting }) =>
-                  handleAddCollateralSubmit(values, setSubmitting)
+                  handlePayLoan(values, setSubmitting)
                 }
               >
                 {({
-                  //values,
                   errors,
                   touched,
                   handleChange,
@@ -58,7 +59,6 @@ const AddCollateral = () => {
                 }) => (
                   <form onSubmit={handleSubmit}>
                     <CustomInput
-                      //value={values.price}
                       placeholder="Amount"
                       name="amount"
                       style={{ color: "black" }}
@@ -67,11 +67,11 @@ const AddCollateral = () => {
                     />
                     {errors.amount && touched.amount && errors.amount}
                     <CustomButton
-                      value="Submit"
+                      value="Pay Loan"
                       type={"button"}
                       style={{ float: "inline-end" }}
                       disabled={isSubmitting}
-                      onClick={handleSubmit}
+                      onClick={() => handleSubmit()}
                     />
                   </form>
                 )}
@@ -84,4 +84,4 @@ const AddCollateral = () => {
   );
 };
 
-export default AddCollateral;
+export default PayLoan;

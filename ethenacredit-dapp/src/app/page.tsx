@@ -17,27 +17,25 @@ export default function Home() {
         <div className={styles.revolution_section_first}>
           <h1>Revolutionizing Lending</h1>
           <p>
-            ChainCredit is at the forefront of revolutionizing the lending
-            industry by leveraging blockchain technology to provide secure,
-            transparent, and efficient loan services.
+            EthenaCredit is an Undercollateralise lending platform that gives
+            out more loan to users than their collateral{" "}
           </p>
           <div>
-                      <Link href="/dashboard/profile">
-
-            <CustomButton
-              value="Get Loan"
-              type={"button"}
-              style={{
-                marginBottom: 20,
-                marginTop: 40,
-                paddingLeft: 70,
-                paddingRight: 70,
-                fontSize: 20,
-              }}
-              disabled={false}
-              onClick={() => {}}
+            <Link href="/dashboard/profile">
+              <CustomButton
+                value="Get Loan"
+                type={"button"}
+                style={{
+                  marginBottom: 20,
+                  marginTop: 40,
+                  paddingLeft: 70,
+                  paddingRight: 70,
+                  fontSize: 20,
+                }}
+                disabled={false}
+                onClick={() => {}}
               />
-              </Link>
+            </Link>
             <CustomButton
               value="Learn more"
               type={"button"}
@@ -86,28 +84,27 @@ export default function Home() {
           <h1>Empowering Financial Freedom through Blockchain Innovation</h1>
           <p>
             Our platform bridges the gap between traditional lending limitations
-            and the needs of modern borrowers by offering real-world asset
+            and the needs of modern borrowers by offering real-world and digital asset
             collateral options and a decentralized, peer-to-peer lending
             environment.
           </p>
           <div>
-                      <Link href="/dashboard/profile">
-
-            <CustomButton
-              value="Get Loan"
-              type={"button"}
-              style={{
-                marginBottom: 20,
-                marginTop: 40,
-                paddingLeft: 70,
-                paddingRight: 70,
-                fontSize: 20,
-                marginRight: 20,
-              }}
-              disabled={false}
-              onClick={() => {}}
+            <Link href="/dashboard/profile">
+              <CustomButton
+                value="Get Loan"
+                type={"button"}
+                style={{
+                  marginBottom: 20,
+                  marginTop: 40,
+                  paddingLeft: 70,
+                  paddingRight: 70,
+                  fontSize: 20,
+                  marginRight: 20,
+                }}
+                disabled={false}
+                onClick={() => {}}
               />
-              </Link>
+            </Link>
             <CustomButton
               value="Learn more"
               type={"button"}
@@ -199,23 +196,22 @@ export default function Home() {
           </div>
         </div>
         <div className="flex justify-center">
-                    <Link href="/dashboard/profile">
-
-          <CustomButton
-            value="Get Loan"
-            type={"button"}
-            style={{
-              marginBottom: 20,
-              marginTop: 40,
-              paddingLeft: 75,
-              paddingRight: 75,
-              fontSize: 20,
-              marginRight: 30,
-            }}
-            disabled={false}
-            onClick={() => {}}
+          <Link href="/dashboard/profile">
+            <CustomButton
+              value="Get Loan"
+              type={"button"}
+              style={{
+                marginBottom: 20,
+                marginTop: 40,
+                paddingLeft: 75,
+                paddingRight: 75,
+                fontSize: 20,
+                marginRight: 30,
+              }}
+              disabled={false}
+              onClick={() => {}}
             />
-            </Link>
+          </Link>
           <CustomButton
             value="Learn more"
             type={"button"}
@@ -234,7 +230,7 @@ export default function Home() {
       <div className={styles.problem_section}>
         <h1>Solution</h1>
         <p style={{ textAlign: "center", marginBottom: 40 }}>
-          ChainCredit’s Innovative Approach
+          EthenaCredit’s Innovative Approach
         </p>
         <div className="grid grid-cols-4 gap-10">
           <div
@@ -303,23 +299,22 @@ export default function Home() {
           </div>
         </div>
         <div className="flex justify-center">
-                    <Link href="/dashboard/profile">
-
-          <CustomButton
-            value="Get Loan"
-            type={"button"}
-            style={{
-              marginBottom: 20,
-              marginTop: 40,
-              paddingLeft: 70,
-              paddingRight: 70,
-              fontSize: 20,
-              marginRight: 30,
-            }}
-            disabled={false}
-            onClick={() => {}}
+          <Link href="/dashboard/profile">
+            <CustomButton
+              value="Get Loan"
+              type={"button"}
+              style={{
+                marginBottom: 20,
+                marginTop: 40,
+                paddingLeft: 70,
+                paddingRight: 70,
+                fontSize: 20,
+                marginRight: 30,
+              }}
+              disabled={false}
+              onClick={() => {}}
             />
-            </Link>
+          </Link>
           <CustomButton
             value="Learn more"
             type={"button"}
@@ -366,7 +361,7 @@ export default function Home() {
             <div style={{ top: 260, position: "relative" }}>
               <h4>Decentralized Platform</h4>
               <p style={{ marginBottom: 40, marginTop: 10 }}>
-                ChainCredit operates on a peer-to-peer lending model,
+                EthenaCredit operates on a peer-to-peer lending model,
                 eliminating the need for traditional financial intermediaries.
               </p>
             </div>
@@ -419,7 +414,7 @@ export default function Home() {
                 />
                 <h4>Global Accessibility</h4>
                 <p style={{ marginBottom: 40, marginTop: 10 }}>
-                  ChainCredit is designed to be accessible to users worldwide,
+                  EthenaCredit is designed to be accessible to users worldwide,
                   breaking down geographical barriers to financial services.
                 </p>
               </div>
@@ -448,10 +443,10 @@ export default function Home() {
       <div className={styles.get_started_section}>
         <h1>
           Get started <br />
-          with ChainCredit.
+          with EthenaCredit.
         </h1>
         <p style={{ marginBottom: 25 }}>
-          Join ChainCredit today and experience the future of lending with{" "}
+          Join EthenaCredit today and experience the future of lending with{" "}
           <br />
           unparalleled transparency, efficiency, and security.
         </p>
