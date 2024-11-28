@@ -263,6 +263,8 @@ contract EthenaCreditTest is Test {
         bool _payInLzToken = false;
 
         ethenaCredit.quoteSend(_dstEid, _to, _minAmountLD, _amountLD, _extraOptions ,_composeMsg, _oftCmd, _payInLzToken);
+        ethenaCredit.send(_dstEid, _to, _minAmountLD, _amountLD, _extraOptions ,_composeMsg, _oftCmd, myuser, _payInLzToken);
+
         vm.stopPrank();
 
     }
