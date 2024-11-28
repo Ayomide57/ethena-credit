@@ -229,6 +229,7 @@ contract EthenaCreditTest is Test {
         bytes memory _oftCmd = bytes("");
         bool _payInLzToken = false;
 
+        IERC20(USDe).approve(address(ethenaCredit), 2 ether);
         ethenaCredit.quoteSend(_dstEid, _to, _amountLD, _minAmountLD, _extraOptions ,_composeMsg, _oftCmd, _payInLzToken);
         vm.stopPrank();
 
@@ -250,6 +251,7 @@ contract EthenaCreditTest is Test {
         bytes memory _oftCmd = bytes("");
         bool _payInLzToken = false;
 
+        IERC20(USDe).approve(address(ethenaCredit), 2 ether);
         ethenaCredit.sendData(_dstEid, _to, _amountLD, _minAmountLD, _extraOptions ,_composeMsg, _oftCmd, _payInLzToken, _myuser);
         vm.stopPrank();
 

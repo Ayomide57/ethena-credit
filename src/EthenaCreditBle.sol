@@ -36,7 +36,7 @@ interface IOFTCoreLike {
         SendParam calldata _sendParam,
         MessagingFee memory fee,
         address _dstAddress
-    ) external view returns (bool success);
+    ) external returns (bool success);
 
 }
 
