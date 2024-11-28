@@ -20,35 +20,48 @@ contract EthenaCreditTest is Test {
     uint256 loan_amount = 25e18;
     address user = makeAddr("user");
     bytes32 priceFeedId = 0xff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace; // ETH/USD
-    address pythContract = 0xDd24F84d36BF92C65F92307595335bdFab5Bbd21;
+    address pythContract = 0x2880aB155794e7179c9eE2e38200202908C17B43;
+    uint32 _dstEid = 40161;
+    address endpoint = 0x6EDCE65403992e310A62460808c4b910D972f10f;
 
     function setUp() public {
         ethenaCredit = new EthenaCreditBle(USDe, sUSDe, pythContract, priceFeedId, 10);
+        address _ethenaCreditSepolia = 0x78078EdDaAa3a5a07aaE04b45AdB44599FC50aef;
+        ethenaCredit.setDestinationAddressAndEid(_ethenaCreditSepolia, _dstEid);
     }
 
-    function testAddCollateral() public {
+    function testAddCollateralBle() public {
 
         deal(USDe, user, useramount);
+        //deal(USDe, address(ethenaCredit), useramount);
+        deal(address(ethenaCredit), 1 ether);
 
         vm.startPrank(user);
 
+        uint256 _minAmountLD = 900000000000000000; 
+
         //approve sUSDe contract to spend users USDe
-        IERC20(USDe).approve(address(sUSDe), amount);
-        //add collateral and deposit user's USDe into sUSDe contract using ethenaCredit as depositor's address
-        ethenaCredit.addCollateral(amount);
+        IERC20(USDe).approve(address(ethenaCredit), useramount + _minAmountLD);
+
+        //add collateral and deposit user's USDe into Sepolia contract
+        ethenaCredit.addCollateral(amount, _minAmountLD);
         console.logUint(IERC20(USDe).balanceOf(address(ethenaCredit)));
         vm.stopPrank();
     }
+//forge test --fork-url https://testnet.rpc.ethena.fi/ --mt testAddCollateralBle -vvvvv
 
-    function testLoanRequest() public {
+
+    function testLoanRequestBle() public {
         deal(USDe, user, useramount);
         deal(USDe, address(ethenaCredit), useramount);
         vm.startPrank(user);
-        //IERC20(USDe).transferFrom(user, address(ethenaCredit), amount);
+        
+        uint256 _minAmountLD = 900000000000000000; 
         console.logUint(IERC20(USDe).balanceOf(address(ethenaCredit)));
         IERC20(USDe).approve(address(sUSDe), amount);
         IERC20(USDe).approve(address(ethenaCredit), amount);
-        ethenaCredit.addCollateral(amount);
+
+        ethenaCredit.addCollateral(amount, _minAmountLD);
         console.logUint(IERC20(USDe).balanceOf(address(ethenaCredit)));
         uint _collateral_id = ethenaCredit._collateral_ids();
          
@@ -60,21 +73,22 @@ contract EthenaCreditTest is Test {
         vm.stopPrank();
     }
 
-    //forge test --fork-url https://testnet.rpc.ethena.fi/ --mt testLoanRequest -vvvvv
+//forge test --fork-url https://testnet.rpc.ethena.fi/ --mt testLoanRequestBle -vvvvv
 
-    function testInvest() public {
+    function testInvestBle() public {
 
         address myuser = 0x78078EdDaAa3a5a07aaE04b45AdB44599FC50aef;
-        //address myuser = 0x9339C5dEEE360d0E352C7E43C9256C7DdC97D37F;
         uint256 deposit = 1000000000000000000;
+        uint256 _minAmountLD = 900000000000000000; 
+        deal(address(ethenaCredit), 1 ether);
 
         vm.startPrank(myuser);
 
         uint256 userPrevBalance = IERC20(USDe).balanceOf(myuser) - deposit;
         // approve deposit contract
-        IERC20(USDe).approve(address(ethenaCredit), deposit);
+        IERC20(USDe).approve(address(ethenaCredit), deposit + _minAmountLD);
         console.logUint(IERC20(USDe).balanceOf(myuser));
-        ethenaCredit.invest(deposit, 1 days);
+        ethenaCredit.invest(deposit, _minAmountLD, 1 days);
         assertEq(IERC20(USDe).balanceOf(address(ethenaCredit)), 0);
         console.logUint(IERC20(USDe).balanceOf(address(ethenaCredit)));
         console.log("user" , IERC20(USDe).balanceOf(myuser));
@@ -83,19 +97,22 @@ contract EthenaCreditTest is Test {
         vm.stopPrank();
     }
 
-//forge test --fork-url https://testnet.rpc.ethena.fi/ --mt testInvest -vvvvv
+//forge test --fork-url https://testnet.rpc.ethena.fi/ --mt testInvestBle -vvvvv
 
-    function testInvestAndWithdraw() public {
+    function testInvestAndWithdrawBle() public {
         address myuser = 0x78078EdDaAa3a5a07aaE04b45AdB44599FC50aef;
         uint256 deposit = 1000000000000000000;
+        uint256 _minAmountLD = 900000000000000000; 
         deal(USDe, address(ethenaCredit), 2000000000000000000);
+        deal(address(ethenaCredit), 1 ether);
+
         vm.startPrank(myuser);
         uint256 userPrevBalance = IERC20(USDe).balanceOf(myuser) - deposit;
         // approve deposit contract
-        IERC20(USDe).approve(address(ethenaCredit), deposit);
+        IERC20(USDe).approve(address(ethenaCredit), deposit + _minAmountLD);
 
         // invest contract
-        ethenaCredit.invest(deposit, 1 days);
+        ethenaCredit.invest(deposit, _minAmountLD, 1 days);
         assertEq(IERC20(USDe).balanceOf(myuser), userPrevBalance);
 
         //_investment_ids 
@@ -106,20 +123,24 @@ contract EthenaCreditTest is Test {
         vm.stopPrank();
 
     }
-//forge test --fork-url https://testnet.rpc.ethena.fi/ --mt testInvestAndWithdraw -vvvvv
 
-    function testAddCollateralAndWithdraw() public {
+//forge test --fork-url https://testnet.rpc.ethena.fi/ --mt testInvestAndWithdrawBle -vvvvv
+
+    function testAddCollateralAndWithdrawBle() public {
 
         deal(USDe, user, useramount);
+        uint256 _minAmountLD = 900000000000000000; 
+        deal(USDe, address(ethenaCredit), useramount + 2000000000000000000);
+        deal(address(ethenaCredit), 1 ether);
+
 
         vm.startPrank(user);
 
         //approve sUSDe contract to spend users USDe
-        IERC20(USDe).approve(address(sUSDe), amount);
         IERC20(USDe).approve(address(ethenaCredit), amount);
 
         //add collateral and deposit user's USDe into sUSDe contract using ethenaCredit as depositor's address
-        ethenaCredit.addCollateral(amount);
+        ethenaCredit.addCollateral(amount, _minAmountLD);
         console.logUint(IERC20(USDe).balanceOf(address(ethenaCredit)));
 
         //_collateral_id
@@ -130,17 +151,18 @@ contract EthenaCreditTest is Test {
 
         vm.stopPrank();
     }
-//forge test --fork-url https://testnet.rpc.ethena.fi/ --mt testAddCollateralAndWithdraw -vvvvv
+//forge test --fork-url https://testnet.rpc.ethena.fi/ --mt testAddCollateralAndWithdrawBle -vvvvv
 
 
-    function testLoanRequestAndWithdrawLoan() public {
+    function testLoanRequestAndWithdrawLoanBle() public {
         deal(USDe, user, useramount);
-        deal(address(ethenaCredit), 10 ether);
+        deal(address(ethenaCredit), 1 ether);
         deal(USDe, address(ethenaCredit), useramount);
         vm.startPrank(user);
 
+        uint256 _minAmountLD = 900000000000000000; 
         IERC20(USDe).approve(address(sUSDe), amount);
-        IERC20(USDe).approve(address(ethenaCredit), amount);
+        IERC20(USDe).approve(address(ethenaCredit), amount + _minAmountLD);
         //console
         console.log("before collateral");
         console.logUint(IERC20(USDe).balanceOf(address(ethenaCredit)));
@@ -148,7 +170,7 @@ contract EthenaCreditTest is Test {
         console.logUint(IERC20(USDe).balanceOf(user));
         console.log("user eth", user.balance);
 
-        ethenaCredit.addCollateral(amount);
+        ethenaCredit.addCollateral(amount, _minAmountLD);
         console.log("_collateral_id", ethenaCredit._collateral_ids());
         uint _collateral_id = ethenaCredit._collateral_ids() - 1;
 
@@ -174,19 +196,26 @@ contract EthenaCreditTest is Test {
         vm.stopPrank();
 
     }
-//forge test --fork-url https://testnet.rpc.ethena.fi/ --mt testLoanRequestAndWithdrawLoan -vvvvv
+//forge test --fork-url https://testnet.rpc.ethena.fi/ --mt testLoanRequestAndWithdrawLoanBle -vvvvv
+
+    function testUpdatePrice() public view {
+        uint256 ethPrice = ethenaCredit.updatePrice(25000000000000000000);
+        console.log(ethPrice);
+    }
+//forge test --fork-url https://testnet.rpc.ethena.fi/ --mt testUpdatePrice -vvvvv
 
 
-    function testRequestAndWithdrawAndRepayLoan() public {
+    function testRequestAndWithdrawAndRepayLoanBle() public {
         deal(USDe, user, useramount);
-        deal(address(ethenaCredit), 10 ether);
+        deal(address(ethenaCredit), 1 ether);
         deal(USDe, address(ethenaCredit), useramount);
         vm.startPrank(user);
 
+        uint256 _minAmountLD = 900000000000000000; 
         IERC20(USDe).approve(address(sUSDe), amount);
-        IERC20(USDe).approve(address(ethenaCredit), amount);
+        IERC20(USDe).approve(address(ethenaCredit), amount + _minAmountLD);
 
-        ethenaCredit.addCollateral(amount);
+        ethenaCredit.addCollateral(amount, _minAmountLD);
         console.log("_collateral_id", ethenaCredit._collateral_ids());
         uint _collateral_id = ethenaCredit._collateral_ids() - 1;
 
@@ -210,27 +239,16 @@ contract EthenaCreditTest is Test {
 
     }
 
-    //forge test --fork-url https://testnet.rpc.ethena.fi/ --mt testRequestAndWithdrawAndRepayLoan -vvvvv
-
-
-    function addressToBytes32(address _addr) public pure returns (bytes32) {
-        return bytes32(uint256(uint160(_addr)));
-    }
+//forge test --fork-url https://testnet.rpc.ethena.fi/ --mt testRequestAndWithdrawAndRepayLoanBle -vvvvv
 
     function testQuote() public {
         address myuser = 0x78078EdDaAa3a5a07aaE04b45AdB44599FC50aef;
         vm.startPrank(myuser);
-        uint32 _dstEid = 40161;
-        bytes32 _to = this.addressToBytes32(0x78078EdDaAa3a5a07aaE04b45AdB44599FC50aef);
         uint256 _amountLD = 1 ether; 
         uint256 _minAmountLD = 900000000000000000; 
-        bytes memory _extraOptions = hex"0003010011010000000000000000000000000000ea60"; 
-        bytes memory _composeMsg = bytes("");
-        bytes memory _oftCmd = bytes("");
-        bool _payInLzToken = false;
 
         IERC20(USDe).approve(address(ethenaCredit), 2 ether);
-        ethenaCredit.quoteSend(_dstEid, _to, _amountLD, _minAmountLD, _extraOptions ,_composeMsg, _oftCmd, _payInLzToken);
+        ethenaCredit.quoteSend(_amountLD, _minAmountLD);
         vm.stopPrank();
 
     }
@@ -242,20 +260,16 @@ contract EthenaCreditTest is Test {
     function testSend() public {
         address _myuser = 0x78078EdDaAa3a5a07aaE04b45AdB44599FC50aef;
         deal(USDe, address(ethenaCredit), 100 ether);
+        deal(address(ethenaCredit), 100 ether);
         deal(USDe, _myuser, 100 ether);
+        deal(_myuser, 100 ether);
+
         vm.startPrank(_myuser);
 
-        uint32 _dstEid = 40161;
-        bytes32 _to = this.addressToBytes32(0x78078EdDaAa3a5a07aaE04b45AdB44599FC50aef);
         uint256 _amountLD = 1 ether; 
         uint256 _minAmountLD = 900000000000000000; 
-        bytes memory _extraOptions = hex"0003010011010000000000000000000000000000ea60"; 
-        bytes memory _composeMsg = bytes("");
-        bytes memory _oftCmd = bytes("");
-        bool _payInLzToken = false;
-        //646849207630617
-        IERC20(USDe).approve(address(ethenaCredit), 10 ether);
-        ethenaCredit.sendData(_dstEid, _to, _amountLD, _minAmountLD, _extraOptions ,_composeMsg, _oftCmd, _payInLzToken, _myuser);
+        IERC20(USDe).approve(address(ethenaCredit), _amountLD + _minAmountLD);
+        ethenaCredit.sendData(_amountLD, _minAmountLD);
         vm.stopPrank();
 
     }

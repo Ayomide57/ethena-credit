@@ -27,6 +27,12 @@ interface IOFTCoreLike {
         uint256 lzTokenFee; // Fee amount in ZRO token.
     }
 
+    struct MessagingReceipt {
+        MessagingFee fee;
+        bytes32 guid;
+        uint64 nonce;
+    }
+
     function quoteSend(
         SendParam calldata _sendParam,
         bool _payInLzToken
@@ -36,7 +42,7 @@ interface IOFTCoreLike {
         SendParam calldata _sendParam,
         MessagingFee memory fee,
         address _dstAddress
-    ) external returns (bool success);
+    ) external payable returns (MessagingReceipt memory receipt);
 
 }
 
@@ -155,16 +161,30 @@ contract EthenaCreditBle is Ownable {
     //maximum repayment duration
     uint public MAX_LOAN_DURATION = 365 days;
 
-
     // USDe addresses
     address public s_usde_token_address;
     // sUSDe addresses
     address public s_susde_token_address;
 
+    // destination address
+    address public destinationAddress;
+
+    // set destination Eid
+    uint32 public destinationEid;
+
+    // destination address in bytes
+    bytes32 destinationAddressInByte;
+
+    //extraOptions for send
+    bytes private extraOptions = hex"0003010011010000000000000000000000000000ea60"; 
+
+
+
     /// @notice The oracle contract
     // IPyth oracle;
     IPyth internal pyth;
     bytes32 internal priceFeedId;
+
 
 
     struct InvestorInfo {
@@ -212,7 +232,13 @@ contract EthenaCreditBle is Ownable {
     }
 
     //constructor
-    constructor(address _usde_token_address, address _susde_token_address, address _pyth_contract, bytes32 _priceFeedId, uint8 _investor_rate) Ownable(msg.sender) {
+    constructor(
+        address _usde_token_address, 
+        address _susde_token_address, 
+        address _pyth_contract, 
+        bytes32 _priceFeedId, 
+        uint8 _investor_rate        
+    ) Ownable(msg.sender) {
         s_usde_token_address = _usde_token_address;
         s_susde_token_address = _susde_token_address;
         s_investor_rate = _investor_rate;
@@ -224,13 +250,23 @@ contract EthenaCreditBle is Ownable {
      * addCollateral - add users collateral (USDe) 
      * Check if collateral existed using the property registration number
      * @param _amount - collateral amount
+     * @param _minAmountLD - collateral amount
      */
 
-    function addCollateral(uint256 _amount) payable external returns (bool success) {
+    function addCollateral(
+        uint256 _amount, 
+        uint256 _minAmountLD
+    ) payable external returns (bool success) {
         if(_amount < MIN_COLLATERAL_AMOUNT && _amount > MAX_COLLATERAL_AMOUNT) revert ErrorAmountShouldBeBetweenMinimumAndMaximumAmount(_amount);
+
+        IOFTCoreLike.SendParam memory sendParam = IOFTCoreLike.SendParam(destinationEid, destinationAddressInByte, _amount, _minAmountLD, extraOptions, bytes(""), bytes(""));
+        IOFTCoreLike usde = IOFTCoreLike(s_usde_token_address);
+
+        IOFTCoreLike.MessagingFee memory _fee = usde.quoteSend(sendParam, false);
+
         require(IERC20(s_usde_token_address).transferFrom(msg.sender, address(this), _amount), "Transfer Failed");
-        //(bool sent, )= s_susde_token_address.call{value: _amount}(abi.encodeWithSignature("deposit(uint256,address)", _amount, address(this)));
-        //if(!sent) revert ErrorTokenTranferFailed();
+        (IOFTCoreLike.MessagingReceipt memory msgReceipt) = usde.send{ value: _fee.nativeFee }(sendParam, _fee, payable(destinationAddress));
+
         collateralList[msg.sender][_collateral_ids] = Collateral(
             false,
             true,
@@ -245,6 +281,7 @@ contract EthenaCreditBle is Ownable {
             _amount,
             _collateral_ids
         );
+        
         _collateral_ids ++;
         return success;
     }
@@ -326,9 +363,6 @@ contract EthenaCreditBle is Ownable {
         //console.log(loan_amount);
         uint256 ethPrice = this.updatePrice(loan_amount);
         //console.log(ethPrice);
-        IERC20(s_usde_token_address).approve(address(s_susde_token_address), loan_amount);
-        (bool sent, bytes memory data) = s_susde_token_address.call(abi.encodeWithSignature("deposit(uint256,address)", loan_amount, address(this)));
-        if(!sent) revert ErrorTokenTranferFailed();
 
         payable(loanList[msg.sender][_loan_id].borrower).transfer(ethPrice); // @note : use low level call syntax
         uint due_date = block.timestamp + loanList[msg.sender][_loan_id].duration;
@@ -407,13 +441,21 @@ contract EthenaCreditBle is Ownable {
      * Check if amount is less than the minimum invesment amount
      * check to see if the duration is higher than now and higher or equal to 30 days
      */
-    function invest(uint _amount, uint256 _duration) external returns (bool success) {
+    function invest(
+        uint _amount,
+        uint256 _minAmountLD,
+        uint256 _duration) external returns (bool success) {
         if (_amount < minimum_investment) revert ErrorInsufficientFund();
         if (block.timestamp + minimum_investment_period <= block.timestamp + _duration) revert ErrorInvestmentDurationMustMoreThanAMonth();
+        //IERC20(s_usde_token_address).approve(address(this), _amount + _minAmountLD);
+
+        IOFTCoreLike.SendParam memory sendParam = IOFTCoreLike.SendParam(destinationEid, destinationAddressInByte, _amount, _minAmountLD, extraOptions, bytes(""), bytes(""));
+        IOFTCoreLike usde = IOFTCoreLike(s_usde_token_address);
+
+        IOFTCoreLike.MessagingFee memory _fee = usde.quoteSend(sendParam, false);
+
         require(IERC20(s_usde_token_address).transferFrom(msg.sender, address(this), _amount), "Transfer Failed");
-        IERC20(s_usde_token_address).approve(address(s_susde_token_address), _amount);
-        (bool sent, bytes memory data) = s_susde_token_address.call(abi.encodeWithSignature("deposit(uint256,address)", _amount, address(this)));
-        if(!sent) revert ErrorTokenTranferFailed();
+        (IOFTCoreLike.MessagingReceipt memory msgReceipt) = usde.send{ value: _fee.nativeFee }(sendParam, _fee, payable(destinationAddress));
 
         uint256 total = (_amount * multiplier) / s_investor_rate;
         investorList[msg.sender][_investment_ids] = InvestorInfo(
@@ -511,43 +553,39 @@ contract EthenaCreditBle is Ownable {
 
 
     function quoteSend(
-        uint32 _dstEid, 
-        bytes32 _to, 
         uint256 _amountLD, 
-        uint256 _minAmountLD, 
-        bytes memory _extraOptions, 
-        bytes memory _composeMsg, 
-        bytes memory _oftCmd, 
-        bool _payInLzToken
+        uint256 _minAmountLD
     ) external returns(bool success){
-        IOFTCoreLike.SendParam memory sendParam = IOFTCoreLike.SendParam(_dstEid, _to, _amountLD, _minAmountLD, _extraOptions, _composeMsg, _oftCmd);
+        bytes memory _extraOptions = hex"0003010011010000000000000000000000000000ea60"; 
+        bytes32 _to = bytes32(uint256(uint160(destinationAddress)));
+        IOFTCoreLike.SendParam memory sendParam = IOFTCoreLike.SendParam(destinationEid, _to, _amountLD, _minAmountLD, _extraOptions, bytes(""), bytes(""));
         IOFTCoreLike usde = IOFTCoreLike(s_usde_token_address);
-        IOFTCoreLike.MessagingFee memory _fee = usde.quoteSend(sendParam, _payInLzToken);
+        IOFTCoreLike.MessagingFee memory _fee = usde.quoteSend(sendParam, false);
         console.log(_fee.nativeFee);
         return true;
     }
 
     function sendData(
-        uint32 _dstEid, 
-        bytes32 _to, 
         uint256 _amountLD, 
-        uint256 _minAmountLD, 
-        bytes memory _extraOptions, 
-        bytes memory _composeMsg, 
-        bytes memory _oftCmd,  
-        bool _payInLzToken,
-        address _dstAddres
+        uint256 _minAmountLD
     ) external returns(bool){
-        IOFTCoreLike.SendParam memory sendParam = IOFTCoreLike.SendParam(_dstEid, _to, _amountLD, _minAmountLD, _extraOptions, _composeMsg, _oftCmd);
+        bytes32 _to = bytes32(uint256(uint160(destinationAddress)));
+        bytes memory _extraOptions = hex"0003010011010000000000000000000000000000ea60"; 
+        IOFTCoreLike.SendParam memory sendParam = IOFTCoreLike.SendParam(destinationEid, _to, _amountLD, _minAmountLD, _extraOptions, bytes(""), bytes(""));
         IOFTCoreLike usde = IOFTCoreLike(s_usde_token_address);
-        IOFTCoreLike.MessagingFee memory _fee = usde.quoteSend(sendParam, _payInLzToken);
-        console.log(_fee.nativeFee);
-        usde.send(sendParam, _fee, _dstAddres);
+        IOFTCoreLike.MessagingFee memory _fee = usde.quoteSend(sendParam, false);
+        require(IERC20(s_usde_token_address).transferFrom(msg.sender, address(this), _amountLD), "Transfer Failed");
+        IOFTCoreLike.MessagingReceipt memory receipt = usde.send{ value: _fee.nativeFee }(sendParam, _fee, payable(destinationAddress));
+        
         return true;
     }
 
-
-    
+    function setDestinationAddressAndEid(address _dstOwner, uint32 _dstEid) onlyOwner external returns(bool) {
+        destinationAddress = _dstOwner;
+        destinationAddressInByte = bytes32(uint256(uint160(destinationAddress)));
+        destinationEid = _dstEid;
+        return true;
+    } 
 
     function getLoanInformation(
         address _borrower,

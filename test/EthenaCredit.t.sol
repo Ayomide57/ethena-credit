@@ -21,9 +21,12 @@ contract EthenaCreditTest is Test {
     address user = makeAddr("user");
     bytes32 priceFeedId = 0xff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace; // ETH/USD
     address pythContract = 0xDd24F84d36BF92C65F92307595335bdFab5Bbd21;
+    uint32 dstEid = 40330;
+    address endpoint = 0x6Ac7bdc07A0583A362F1497252872AE6c0A5F5B8;
 
     function setUp() public {
-        ethenaCredit = new EthenaCredit(USDe, sUSDe, pythContract, priceFeedId, 10);
+        address _ethenaCreditBle = 0x78078EdDaAa3a5a07aaE04b45AdB44599FC50aef;
+        ethenaCredit = new EthenaCredit(USDe, sUSDe, pythContract, priceFeedId, 10, endpoint, _ethenaCreditBle);
     }
 
     function testAddCollateral() public {

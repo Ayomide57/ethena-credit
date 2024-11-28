@@ -13,12 +13,15 @@ contract EthenaCreditScript is Script {
     address sepoliaEndpoint = 0x6EDCE65403992e310A62460808c4b910D972f10f;
     address bleEndpoint = 0x6Ac7bdc07A0583A362F1497252872AE6c0A5F5B8;
     uint bleEid = 40330;
-    uint sepoliaEid = 40161;
+    //uint sepoliaEid = 40161;
+    address endpoint = 0x6Ac7bdc07A0583A362F1497252872AE6c0A5F5B8;
+
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
-        EthenaCredit ethenaCredit = new EthenaCredit(USDe, sUSDe, pythContract, priceFeedId, 10);
+        address _ethenaCreditBle = 0x78078EdDaAa3a5a07aaE04b45AdB44599FC50aef;
+        EthenaCredit ethenaCredit = new EthenaCredit(USDe, sUSDe, pythContract, priceFeedId, 10, endpoint, _ethenaCreditBle);
 
         vm.stopBroadcast();
     }

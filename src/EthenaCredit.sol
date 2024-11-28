@@ -2,13 +2,14 @@
 
 pragma solidity ^0.8.13;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@pythnetwork/pyth-sdk-solidity/IPyth.sol";
 import "@pythnetwork/pyth-sdk-solidity/PythStructs.sol";
+import { OApp, MessagingFee, Origin } from "@layerzerolabs/oapp-evm/contracts/oapp/OApp.sol";
 
 
-contract EthenaCredit is Ownable {
+contract EthenaCredit is OApp  {
     /**
      * @dev This contract allows user to register, add collateral and apply for 
      * loans with the collateral after verification
@@ -179,7 +180,15 @@ contract EthenaCredit is Ownable {
     }
 
     //constructor
-    constructor(address _usde_token_address, address _susde_token_address, address _pyth_contract, bytes32 _priceFeedId, uint8 _investor_rate) Ownable(msg.sender) {
+    constructor(
+        address _usde_token_address, 
+        address _susde_token_address, 
+        address _pyth_contract, 
+        bytes32 _priceFeedId, 
+        uint8 _investor_rate,
+        address _endpoint, 
+        address _delegate
+    ) Ownable(msg.sender) OApp(_endpoint, _delegate) {
         s_usde_token_address = _usde_token_address;
         s_susde_token_address = _susde_token_address;
         s_investor_rate = _investor_rate;
@@ -463,6 +472,20 @@ contract EthenaCredit is Ownable {
         require(sent , "failed");
         return sent;
     }
+
+    function _lzReceive(
+        Origin calldata _origin, // struct containing info about the message sender
+        bytes32 _guid, // global packet identifier
+        bytes calldata payload, // encoded message payload being received
+        address _executor, // the Executor address.
+        bytes calldata _extraData // arbitrary data appended by the Executor
+    ) internal override {
+            //data = abi.decode(payload, (string)); // your logic here
+            //(bool sent, bytes memory data) = s_susde_token_address.call(abi.encodeWithSignature("deposit(uint256,address)", loan_amount, address(this)));
+        //if(!sent) revert ErrorTokenTranferFailed();
+
+    }
+
 
 
     //function updatePrice(bytes[] calldata pythPriceUpdate) external {
