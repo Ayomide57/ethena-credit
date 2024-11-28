@@ -519,7 +519,7 @@ contract EthenaCreditBle is Ownable {
         bytes memory _composeMsg, 
         bytes memory _oftCmd, 
         bool _payInLzToken
-    ) public returns(bool success){
+    ) external returns(bool success){
         IOFTCoreLike.SendParam memory sendParam = IOFTCoreLike.SendParam(_dstEid, _to, _amountLD, _minAmountLD, _extraOptions, _composeMsg, _oftCmd);
         IOFTCoreLike usde = IOFTCoreLike(s_usde_token_address);
         IOFTCoreLike.MessagingFee memory _fee = usde.quoteSend(sendParam, _payInLzToken);

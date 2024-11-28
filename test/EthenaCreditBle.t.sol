@@ -241,7 +241,10 @@ contract EthenaCreditTest is Test {
 
     function testSend() public {
         address _myuser = 0x78078EdDaAa3a5a07aaE04b45AdB44599FC50aef;
+        deal(USDe, address(ethenaCredit), 100 ether);
+        deal(USDe, _myuser, 100 ether);
         vm.startPrank(_myuser);
+
         uint32 _dstEid = 40161;
         bytes32 _to = this.addressToBytes32(0x78078EdDaAa3a5a07aaE04b45AdB44599FC50aef);
         uint256 _amountLD = 1 ether; 
@@ -250,8 +253,8 @@ contract EthenaCreditTest is Test {
         bytes memory _composeMsg = bytes("");
         bytes memory _oftCmd = bytes("");
         bool _payInLzToken = false;
-
-        IERC20(USDe).approve(address(ethenaCredit), 2 ether);
+        //646849207630617
+        IERC20(USDe).approve(address(ethenaCredit), 10 ether);
         ethenaCredit.sendData(_dstEid, _to, _amountLD, _minAmountLD, _extraOptions ,_composeMsg, _oftCmd, _payInLzToken, _myuser);
         vm.stopPrank();
 
