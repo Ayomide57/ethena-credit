@@ -220,13 +220,44 @@ contract EthenaCreditTest is Test {
     function testQuote() public {
         address myuser = 0x78078EdDaAa3a5a07aaE04b45AdB44599FC50aef;
         //address myuser = 0x9339C5dEEE360d0E352C7E43C9256C7DdC97D37F;
+        vm.deal(myuser, 0.1 ether);
         vm.startPrank(myuser);
-//0x00000000000000000000000078078eddaaa3a5a07aae04b45adb44599fc50aef
+        //0x00000000000000000000000078078eddaaa3a5a07aae04b45adb44599fc50aef
         uint32 _dstEid = 40161;
         bytes32 _to = this.addressToBytes32(0x78078EdDaAa3a5a07aaE04b45AdB44599FC50aef);
-        uint256 _amountLD = 1 ether; 
-        uint256 _minAmountLD = 900000000000000000; 
-        bytes memory _extraOptions = hex"0003010011010000000000000000000000000000ea60"; 
+        uint256 _amountLD = 2 ether; 
+        uint256 _minAmountLD = 1000000000000000000; 
+        bytes memory _extraOptions = abi.encode(0x0003010011010000000000000000000000000000ea60); 
+        /**bytes memory _extraOptions = OptionsBuilder.newOptions().addExecutorNativeDropOption(
+            1.2345 ether,
+            addressToBytes32(0x78078EdDaAa3a5a07aaE04b45AdB44599FC50aef)
+        );**/
+
+        bytes memory _composeMsg = bytes("");
+        bytes memory _oftCmd = bytes("");
+        bool _payInLzToken = false;
+
+        ethenaCredit.quoteSend(_dstEid, _to, _minAmountLD, _amountLD, _extraOptions ,_composeMsg, _oftCmd, _payInLzToken);
+        vm.stopPrank();
+
+    }
+
+    function testQuoteAndSend() public {
+        address myuser = 0x78078EdDaAa3a5a07aaE04b45AdB44599FC50aef;
+        //address myuser = 0x9339C5dEEE360d0E352C7E43C9256C7DdC97D37F;
+        vm.deal(myuser, 0.1 ether);
+        vm.startPrank(myuser);
+        //0x00000000000000000000000078078eddaaa3a5a07aae04b45adb44599fc50aef
+        uint32 _dstEid = 40161;
+        bytes32 _to = this.addressToBytes32(0x78078EdDaAa3a5a07aaE04b45AdB44599FC50aef);
+        uint256 _amountLD = 2 ether; 
+        uint256 _minAmountLD = 1000000000000000000; 
+        bytes memory _extraOptions = abi.encode(0x0003010011010000000000000000000000000000ea60); 
+        /**bytes memory _extraOptions = OptionsBuilder.newOptions().addExecutorNativeDropOption(
+            1.2345 ether,
+            addressToBytes32(0x78078EdDaAa3a5a07aaE04b45AdB44599FC50aef)
+        );**/
+
         bytes memory _composeMsg = bytes("");
         bytes memory _oftCmd = bytes("");
         bool _payInLzToken = false;

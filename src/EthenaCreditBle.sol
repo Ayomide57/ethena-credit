@@ -503,14 +503,13 @@ contract EthenaCreditBle is Ownable {
         bytes memory _composeMsg, 
         bytes memory _oftCmd, 
         bool _payInLzToken
-    ) public returns(bool success){
+    ) public returns(bytes memory){
         SendParam memory sendParam = SendParam(_dstEid, _to, _minAmountLD, _amountLD, _extraOptions, _composeMsg, _oftCmd);
         (bool sent, bytes memory data) = s_usde_token_address.call(
             abi.encodeWithSignature("quoteSend((uint32, bytes32, uint256, uint256, bytes, bytes, bytes), bool)", 
             sendParam, _payInLzToken
             ));
-        console.logBytes(data);
-        return sent;
+        return data;
     }
 
     function send(
@@ -521,10 +520,11 @@ contract EthenaCreditBle is Ownable {
         bytes memory _extraOptions, 
         bytes memory _composeMsg, 
         bytes memory _oftCmd,  
-        address _dstAddress     
+        address _dstAddress,
+        bool _payInLzToken
     ) onlyOwner public returns(bool success){
         SendParam memory sendParam = SendParam(_dstEid, _to, _minAmountLD, _amountLD,_extraOptions ,_composeMsg,_oftCmd);
-        //MessagingFee memory fee = this.quoteSend(_dstEid, _to, _minAmountLD, _amountLD,_extraOptions ,_composeMsg,_oftCmd, _payInLzToken); 
+        MessagingFee memory fee = this.quoteSend(_dstEid, _to, _minAmountLD, _amountLD,_extraOptions ,_composeMsg,_oftCmd, _payInLzToken); 
         (bool sent, bytes memory data) = s_usde_token_address.call(
             abi.encodeWithSignature("send((uint32, bytes32, uint256, uint256, bytes, bytes, bytes), (uint256, uint256),address)", 
             sendParam, _dstAddress, _dstAddress
