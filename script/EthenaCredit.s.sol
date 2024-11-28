@@ -23,3 +23,6 @@ contract EthenaCreditScript is Script {
         vm.stopBroadcast();
     }
 }
+
+
+//forge script --chain sepolia script/EthenaCredit.s.sol:EthenaCreditScript --rpc-url $SEPOLIA_RPC_URL2 --broadcast --sender 0x78078EdDaAa3a5a07aaE04b45AdB44599FC50aef --verify $ETHERSCAN_API_KEY --legacy -vvvv

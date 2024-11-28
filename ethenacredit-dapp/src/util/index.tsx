@@ -2,7 +2,7 @@
 
 
 
-import { ethenacreditAbi, ethenacreditAddress, USDe, sUSDe } from "./constants";
+import { ethenacreditAbi, ethenacreditAddress, USDe, usdeAbi } from "./constants";
 
 import { ethers, JsonRpcProvider } from "ethers";
 import { prepareContractCall, getContract, sendTransaction, createThirdwebClient } from "thirdweb";
@@ -29,6 +29,14 @@ export const ethenaCreditContract = getContract({
   chain: sepolia,
   abi: ethenacreditAbi,
 });
+
+export const usdeContract = getContract({
+  client,
+  address: USDe,
+  chain: sepolia,
+  abi: usdeAbi,
+});
+
 
 
 export const addCollateral = async (values: { account: any, amount: number }) => {
@@ -220,7 +228,7 @@ export const payLoan = async (
   try {
     //get usde abi and create contrat
     const tx = approve({
-      contract: USDe,
+      contract: usdeContract,
       spender: ethenacreditAddress,
       amount: Number(amount),
     });
@@ -260,7 +268,7 @@ export const invest = async (
   try {
     //get usde abi and create contrat
     const tx = approve({
-      contract: USDe,
+      contract: usdeContract,
       spender: ethenacreditAddress,
       amount: Number(amount),
     });

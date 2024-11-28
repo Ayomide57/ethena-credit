@@ -14,6 +14,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@pythnetwork/pyth-sdk-solidity": "^4.0.0"
+    "@layerzerolabs/lz-evm-messagelib-v2": "^3.0.19",
+    "@layerzerolabs/lz-evm-protocol-v2": "^3.0.19",
+    "@layerzerolabs/lz-v2-utilities": "^3.0.19",
+    "@layerzerolabs/oapp-evm": "^0.3.0",
+    "@pythnetwork/pyth-sdk-solidity": "^4.0.0",
+    "solidity-bytes-utils": "^0.8.2"
   }
 }
