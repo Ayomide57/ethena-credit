@@ -231,7 +231,7 @@ contract EthenaCreditTest is Test {
         bytes memory _oftCmd = bytes("");
         bool _payInLzToken = false;
 
-        ethenaCredit.quoteSend(_dstEid, _to, _minAmountLD, _amountLD, _extraOptions ,_composeMsg, _oftCmd, _payInLzToken);
+        ethenaCredit.quoteSend(_dstEid, _to, _amountLD, _minAmountLD, _extraOptions ,_composeMsg, _oftCmd, _payInLzToken);
         vm.stopPrank();
 
     }

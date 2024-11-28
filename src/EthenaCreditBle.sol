@@ -9,6 +9,31 @@ import "@pythnetwork/pyth-sdk-solidity/PythStructs.sol";
 import {console} from "forge-std/Script.sol";
 
 
+
+interface IOFTCoreLike {
+    struct SendParam {
+        uint32 dstEid; // Destination endpoint ID.
+        bytes32 to; // Recipient address.
+        uint256 amountLD; // Amount to send in local decimals.
+        uint256 minAmountLD; // Minimum amount to send in local decimals.
+        bytes extraOptions; // Additional options supplied by the caller to be used in the LayerZero message.
+        bytes composeMsg; // The composed message for the send() operation.
+        bytes oftCmd; // The OFT command to be executed, unused in default OFT implementations.
+    }
+
+
+    struct MessagingFee {
+        uint256 nativeFee; // Fee amount in native gas token.
+        uint256 lzTokenFee; // Fee amount in ZRO token.
+    }
+
+    function quoteSend(
+        SendParam calldata _sendParam,
+        bool _payInLzToken
+    ) external view returns (MessagingFee memory msgFee);
+}
+
+
 contract EthenaCreditBle is Ownable {
     /**
      * @dev This contract allows user to register, add collateral and apply for 
@@ -167,22 +192,6 @@ contract EthenaCreditBle is Ownable {
         uint256 amount;
         uint256 collateral_id; 
     }
-
-    struct SendParam {
-        uint32 dstEid; // Destination endpoint ID.
-        bytes32 to; // Recipient address.
-        uint256 amountLD; // Amount to send in local decimals.
-        uint256 minAmountLD; // Minimum amount to send in local decimals.
-        bytes extraOptions; // Additional options supplied by the caller to be used in the LayerZero message.
-        bytes composeMsg; // The composed message for the send() operation.
-        bytes oftCmd; // The OFT command to be executed, unused in default OFT implementations.
-    }
-
-    struct MessagingFee {
-        uint256 nativeFee; // Fee amount in native gas token.
-        uint256 lzTokenFee; // Fee amount in ZRO token.
-    }
-
 
     mapping(address => mapping(uint256 => Loan)) public loanList;
     mapping(address => mapping(uint256 => InvestorInfo)) public investorList;
@@ -504,13 +513,11 @@ contract EthenaCreditBle is Ownable {
         bytes memory _oftCmd, 
         bool _payInLzToken
     ) public returns(bool success){
-        SendParam memory sendParam = SendParam(_dstEid, _to, _minAmountLD, _amountLD, _extraOptions, _composeMsg, _oftCmd);
-        (bool sent, bytes memory data) = s_usde_token_address.call(
-            abi.encodeWithSignature("quoteSend((uint32, bytes32, uint256, uint256, bytes, bytes, bytes), bool)", 
-            sendParam, _payInLzToken
-            ));
-        console.logBytes(data);
-        return sent;
+        IOFTCoreLike.SendParam memory sendParam = IOFTCoreLike.SendParam(_dstEid, _to, _amountLD, _minAmountLD, _extraOptions, _composeMsg, _oftCmd);
+        IOFTCoreLike usde = IOFTCoreLike(s_usde_token_address);
+        IOFTCoreLike.MessagingFee memory _fee = usde.quoteSend(sendParam, _payInLzToken);
+        console.log(_fee.nativeFee);
+        return true;
     }
 
     function send(
@@ -523,7 +530,7 @@ contract EthenaCreditBle is Ownable {
         bytes memory _oftCmd,  
         address _dstAddress     
     ) onlyOwner public returns(bool success){
-        SendParam memory sendParam = SendParam(_dstEid, _to, _minAmountLD, _amountLD,_extraOptions ,_composeMsg,_oftCmd);
+        IOFTCoreLike.SendParam memory sendParam = IOFTCoreLike.SendParam(_dstEid, _to, _minAmountLD, _amountLD,_extraOptions ,_composeMsg,_oftCmd);
         //MessagingFee memory fee = this.quoteSend(_dstEid, _to, _minAmountLD, _amountLD,_extraOptions ,_composeMsg,_oftCmd, _payInLzToken); 
         (bool sent, bytes memory data) = s_usde_token_address.call(
             abi.encodeWithSignature("send((uint32, bytes32, uint256, uint256, bytes, bytes, bytes), (uint256, uint256),address)", 
