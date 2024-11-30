@@ -153,14 +153,7 @@ const PaymentHistory = () => {
     );
     const filterVal: History[] = [];
     events.map(
-      (event: {
-        args: {
-          loan_payment_id: any;
-          borrower: string;
-          amount: BigNumberish;
-          loan_id: BigNumberish;
-        };
-      }) => {
+      (event: any) => {
         return (
           event.args &&
           filterVal.push({

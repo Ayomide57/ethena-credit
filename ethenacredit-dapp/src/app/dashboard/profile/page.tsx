@@ -1,8 +1,8 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+//import { useEffect, useState, useCallback } from "react";
 //import Link from "next/link";
-import Image from "next/image";
-import { useActiveAccount } from "thirdweb/react";
+//import Image from "next/image";
+//import { useActiveAccount } from "thirdweb/react";
 
  export interface IUserData {
    company: `0x${string}`;
@@ -16,7 +16,7 @@ import { useActiveAccount } from "thirdweb/react";
 const Profile = () => {
 
   //const [userData, setUserData] = useState<IUserData | unknown>(null);
-  const smartAccount = useActiveAccount();
+  //const smartAccount = useActiveAccount();
 
 
   /**const UpdateUI = useCallback(async () => {
@@ -26,10 +26,10 @@ const Profile = () => {
     }
   }, [smartAccount]);**/
 
-  useEffect(() => {
+  /**useEffect(() => {
     //UpdateUI();
     //}, [UpdateUI, userData]);
-  },[]);
+  },[]);**/
     return (
       <>
         <div className="w-full px-4 ml-10">
@@ -76,7 +76,7 @@ const Profile = () => {
                         artist of considerable range.
                       </p>
                       <a
-                        href="javascript:void(0);"
+                        href="#"
                         className="font-normal text-pink-500"
                       >
                         Show more

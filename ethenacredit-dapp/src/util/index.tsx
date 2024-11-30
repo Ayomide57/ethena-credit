@@ -1,11 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-
-
 import { ethenacreditAbi, ethenacreditAddress, USDe, sUSDe, usdeAbi } from "./constants";
 
 import { ethers, JsonRpcProvider } from "ethers";
-import { prepareContractCall, getContract, sendTransaction, createThirdwebClient } from "thirdweb";
+import { prepareContractCall, getContract, sendTransaction, createThirdwebClient, waitForReceipt } from "thirdweb";
 import {
   approve,
 } from "thirdweb/extensions/erc20";
@@ -60,20 +58,25 @@ export const addCollateral = async (values: { account: any, amount: number }) =>
           account: values.account,
           transaction: tx,
         });
-        if (transactionHash) {
+        const receipt = await waitForReceipt({
+          client,
+          chain: sepolia,
+          transactionHash: transactionHash,
+        });
+        if (receipt) {
           setTimeout(async () => {
-              const transaction = prepareContractCall({
-                contract: ethenaCreditContract,
-                method: "addCollateral",
-                params: [BigInt(values.amount * 1000000000000000000)],
-              });
+            const transaction = prepareContractCall({
+              contract: ethenaCreditContract,
+              method: "addCollateral",
+              params: [BigInt(values.amount * 1000000000000000000)],
+            });
 
-              const { transactionHash } = await sendTransaction({
-                account: values.account,
-                transaction,
-              });
+            const { transactionHash } = await sendTransaction({
+              account: values.account,
+              transaction,
+            });
             toast.success(transactionHash);
-          }, 10000);
+          }, 5000);
         }
 
 
@@ -153,7 +156,11 @@ export const withdrawLoan = async (
                     const transaction = prepareContractCall({
                       contract: ethenaCreditContract,
                       method: "withdrawLoan",
-                      params: [BigInt(loan_id), BigInt(collateral_id)],
+                      params: [
+                        BigInt(loan_id),
+                        BigInt(collateral_id),
+                        [priceFeedUpdateData as any],
+                      ],
                     });
 
                     const { transactionHash } = await sendTransaction({

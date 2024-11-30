@@ -90,7 +90,7 @@ export type Loan = {
   loan_amount_period: string;
 };
 
-export const columns: ColumnDef<Loan>[] = [
+const columns: ColumnDef<Loan>[] = [
   {
     id: "select",
     header: ({ table }) => (

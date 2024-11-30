@@ -8,8 +8,23 @@ import { invest } from "@/util";
 //import { toast } from "react-hot-toast";
 import { useActiveAccount } from "thirdweb/react";
 import { Select } from "@/components/ui/select";
-import { lists } from "../../loans/request-loan/[id]/page";
 import toast from "react-hot-toast";
+
+const lists = [
+  { id: 1, month: "1 month" },
+  { id: 2, month: "2 months" },
+  { id: 3, month: "3 months" },
+  { id: 4, month: "4 months" },
+  { id: 5, month: "5 months" },
+  { id: 6, month: "6 months" },
+  { id: 7, month: "7 months" },
+  { id: 8, month: "8 months" },
+  { id: 9, month: "9 months" },
+  { id: 10, month: "10 months" },
+  { id: 11, month: "11 months" },
+  { id: 12, month: "12 months" },
+];
+
 
 const Invest = () => {
   const smartAccount = useActiveAccount();

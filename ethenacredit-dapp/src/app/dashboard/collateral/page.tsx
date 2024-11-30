@@ -166,15 +166,7 @@ const Collaterals = () => {
     const events = await ethenaContract.queryFilter("collateralEvent");
     const filterVal: Collateral[] = [];
     events.map(
-      (event: {
-        args: {
-          collateral_id: any;
-          borrower: string;
-          amount: BigNumberish;
-          active_loan: boolean;
-          existed: boolean;
-        };
-      }) => {
+      (event: any) => {
         return (
           event.args &&
           filterVal.push({

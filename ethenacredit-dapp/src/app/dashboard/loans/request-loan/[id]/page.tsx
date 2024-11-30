@@ -10,7 +10,7 @@ import { Select } from "@/components/ui/select";
 import { useActiveAccount } from "thirdweb/react";
 
 
-export const lists = [
+const lists = [
     { id: 1, month: "1 month" },
     { id: 2, month: "2 months" },
     { id: 3, month: "3 months" },

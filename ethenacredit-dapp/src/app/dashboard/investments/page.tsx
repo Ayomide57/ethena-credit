@@ -179,15 +179,7 @@ const Investments = () => {
     const events = await ethenaContract.queryFilter("investmentEvent");
     const filterVal: Investment[] = [];
     events.map(
-      (event: {
-        args: {
-          investment_id: any;
-          investor: string;
-          total_amount: BigNumberish;
-          accumulated_interest: BigNumberish;
-          withdrawal_date: BigNumberish;
-        };
-      }) => {
+      (event: any) => {
         return (
           event.args &&
           filterVal.push({

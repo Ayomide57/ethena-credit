@@ -21,7 +21,7 @@ export default function Home() {
             out more loan to users than their collateral{" "}
           </p>
           <div>
-            <Link href="/dashboard/profile">
+            <Link href="/dashboard" shallow={true}>
               <CustomButton
                 value="Get Loan"
                 type={"button"}
@@ -84,12 +84,12 @@ export default function Home() {
           <h1>Empowering Financial Freedom through Blockchain Innovation</h1>
           <p>
             Our platform bridges the gap between traditional lending limitations
-            and the needs of modern borrowers by offering real-world and digital asset
-            collateral options and a decentralized, peer-to-peer lending
+            and the needs of modern borrowers by offering real-world and digital
+            asset collateral options and a decentralized, peer-to-peer lending
             environment.
           </p>
           <div>
-            <Link href="/dashboard/profile">
+            <Link href="/dashboard" shallow={true}>
               <CustomButton
                 value="Get Loan"
                 type={"button"}
@@ -196,7 +196,7 @@ export default function Home() {
           </div>
         </div>
         <div className="flex justify-center">
-          <Link href="/dashboard/profile">
+          <Link href="/dashboard">
             <CustomButton
               value="Get Loan"
               type={"button"}
@@ -299,7 +299,7 @@ export default function Home() {
           </div>
         </div>
         <div className="flex justify-center">
-          <Link href="/dashboard/profile">
+          <Link href="/dashboard">
             <CustomButton
               value="Get Loan"
               type={"button"}
@@ -451,7 +451,7 @@ export default function Home() {
           unparalleled transparency, efficiency, and security.
         </p>
         <div className="flex justify-start">
-          <Link href="/dashboard/profile">
+          <Link href="/dashboard">
             <CustomButton
               value="Get Started"
               type={"button"}

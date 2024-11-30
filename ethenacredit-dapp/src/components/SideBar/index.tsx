@@ -24,7 +24,6 @@ const SideBar = ({ }: any) => {
           <div>
             <span className="flex items-center space-x-1">
               <Link
-                rel="noopener noreferrer"
                 href="/dashboard/profile"
                 className="flex items-center p-2 space-x-3 rounded-md text-sm"
               >
@@ -38,8 +37,7 @@ const SideBar = ({ }: any) => {
             <li className="dark:bg-gray-100 dark:text-gray-900">
               <Link
                 className="flex items-center p-2 space-x-3 rounded-md"
-                href={"/"}
-                rel="noopener noreferrer"
+                href={"/dashboard"}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -53,7 +51,6 @@ const SideBar = ({ }: any) => {
             </li>
             <li>
               <Link
-                rel="noopener noreferrer"
                 href="/dashboard/loans"
                 className="flex items-center p-2 space-x-3 rounded-md"
               >
@@ -63,7 +60,6 @@ const SideBar = ({ }: any) => {
             </li>
             <li>
               <Link
-                rel="noopener noreferrer"
                 href="/dashboard/collateral"
                 className="flex items-center p-2 space-x-3 rounded-md"
               >
@@ -73,7 +69,6 @@ const SideBar = ({ }: any) => {
             </li>
             <li>
               <Link
-                rel="noopener noreferrer"
                 href="/dashboard/investments/"
                 className="flex items-center p-2 space-x-3 rounded-md"
               >
@@ -85,7 +80,6 @@ const SideBar = ({ }: any) => {
           <ul className="pt-4 pb-2 space-y-1 text-sm">
             <li>
               <Link
-                rel="noopener noreferrer"
                 href="#"
                 className="flex items-center p-2 space-x-3 rounded-md"
               >

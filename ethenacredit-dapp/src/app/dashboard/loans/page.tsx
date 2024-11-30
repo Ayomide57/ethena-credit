@@ -248,19 +248,7 @@ const Loans = () => {
     const events = await ethenaContract.queryFilter("loanRequestEvent");
     const filterVal: Loan[] = [];
     events.map(
-      (event: {
-        args: {
-          loan_id: any;
-          repaid: boolean;
-          loan_disbursed: boolean;
-          borrower: string;
-          amount: BigNumberish;
-          duration: BigNumberish;
-          due_date: BigNumberish;
-          total_amount_paid: BigNumberish;
-          collateral_id: BigNumberish;
-        };
-      }) => {
+      (event: any) => {
         return (
           event.args &&
           filterVal.push({
