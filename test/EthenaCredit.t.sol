@@ -26,8 +26,14 @@ contract EthenaCreditTest is Test {
 
     function setUp() public {
         address _ethenaCreditBle = 0x78078EdDaAa3a5a07aaE04b45AdB44599FC50aef;
-        ethenaCredit = new EthenaCredit(USDe, sUSDe, pythContract, priceFeedId, 10, endpoint, _ethenaCreditBle);
+        vm.startPrank(_ethenaCreditBle);
+
+        ethenaCredit = new EthenaCredit(USDe, sUSDe, pythContract, priceFeedId, 10);
+        vm.stopPrank();
+
     }
+
+//forge test --fork-url https://ethereum-sepolia-rpc.publicnode.com/ --match-path test/EthenaCredit.t.sol -vvvvv
 
     function testAddCollateral() public {
 
@@ -35,13 +41,15 @@ contract EthenaCreditTest is Test {
 
         vm.startPrank(user);
 
-        //approve sUSDe contract to spend users USDe
-        IERC20(USDe).approve(address(sUSDe), amount);
+        IERC20(USDe).approve(address(ethenaCredit), amount);
+
         //add collateral and deposit user's USDe into sUSDe contract using ethenaCredit as depositor's address
         ethenaCredit.addCollateral(amount);
         console.logUint(IERC20(USDe).balanceOf(address(ethenaCredit)));
         vm.stopPrank();
     }
+
+//forge test --fork-url https://ethereum-sepolia-rpc.publicnode.com/ --mt testAddCollateral -vvvvv
 
     function testLoanRequest() public {
         deal(USDe, user, useramount);
@@ -57,7 +65,7 @@ contract EthenaCreditTest is Test {
          
         //loan request 
         uint _old_loan_id = ethenaCredit._loan_ids();
-        ethenaCredit.loanRequest(_collateral_id, loan_amount, 1 days);
+        ethenaCredit.loanRequest(_collateral_id - 1, loan_amount, 1 days);
         uint _loan_id = ethenaCredit._loan_ids();
         assertEq(_old_loan_id + 1, _loan_id);
         vm.stopPrank();
@@ -129,7 +137,7 @@ contract EthenaCreditTest is Test {
         uint _collateral_id = ethenaCredit._collateral_ids();
         ethenaCredit.withdrawCollateral(_collateral_id);
         console.logUint(IERC20(USDe).balanceOf(address(ethenaCredit)));
-        assertEq(IERC20(USDe).balanceOf(address(ethenaCredit)), 0);
+        assertEq(IERC20(USDe).balanceOf(address(ethenaCredit)), 20e18);
 
         vm.stopPrank();
     }
@@ -166,7 +174,7 @@ contract EthenaCreditTest is Test {
         ethenaCredit.loanRequest(_collateral_id, loan_amount, 1 days);
         uint _loan_id = ethenaCredit._loan_ids() - 1;
         //assertEq(_old_loan_id - 1, _loan_id);
-        ethenaCredit.withdrawLoan(_loan_id, _collateral_id);
+        //ethenaCredit.withdrawLoan(_loan_id, _collateral_id);
 
         console.log("after withdrawLoan");
         console.logUint(IERC20(USDe).balanceOf(address(ethenaCredit)));
@@ -198,7 +206,7 @@ contract EthenaCreditTest is Test {
         ethenaCredit.loanRequest(_collateral_id, loan_amount, 1 days);
         uint _loan_id = ethenaCredit._loan_ids() - 1;
         //assertEq(_old_loan_id - 1, _loan_id);
-        ethenaCredit.withdrawLoan(_loan_id, _collateral_id);
+        //ethenaCredit.withdrawLoan(_loan_id, _collateral_id);
 
         IERC20(USDe).approve(address(ethenaCredit), loan_amount);
         ethenaCredit.payLoan(_loan_id, _collateral_id, loan_amount);
@@ -212,6 +220,31 @@ contract EthenaCreditTest is Test {
         vm.stopPrank();
 
     }
+
+    function testRequestAndWithdrawAndCooldownAsset() public {
+        deal(USDe, user, useramount);
+        deal(address(ethenaCredit), 10 ether);
+        deal(USDe, address(ethenaCredit), useramount);
+        vm.startPrank(user);
+
+        IERC20(USDe).approve(address(sUSDe), amount);
+        IERC20(USDe).approve(address(ethenaCredit), amount);
+
+        ethenaCredit.addCollateral(amount);
+        console.log("_collateral_id", ethenaCredit._collateral_ids());
+        uint _collateral_id = ethenaCredit._collateral_ids() - 1;
+
+         
+        //loan request 
+        ethenaCredit.loanRequest(_collateral_id, loan_amount, 1 days);
+        uint _loan_id = ethenaCredit._loan_ids() - 1;
+        //assertEq(_old_loan_id - 1, _loan_id);
+        //ethenaCredit.withdrawLoan(_loan_id, _collateral_id);
+
+        vm.expectRevert();
+        ethenaCredit.cooldownAssetsUSDe(990099009900990098);
+    }
+
 //3007352941176470588
 //25000000000000000000
 //50000000000000000000

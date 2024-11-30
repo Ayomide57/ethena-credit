@@ -66,6 +66,7 @@ const PayLoan = ({
                       onBlur={handleBlur}
                     />
                     {errors.amount && touched.amount && errors.amount}
+
                     <CustomButton
                       value="Pay Loan"
                       type={"button"}

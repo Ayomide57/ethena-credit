@@ -6,45 +6,10 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@pythnetwork/pyth-sdk-solidity/IPyth.sol";
 import "@pythnetwork/pyth-sdk-solidity/PythStructs.sol";
-import {console} from "forge-std/Script.sol";
+import {IOFTCoreLike} from "./interfaces/IOFTCoreLike.sol";
 
 
 
-interface IOFTCoreLike {
-    struct SendParam {
-        uint32 dstEid; // Destination endpoint ID.
-        bytes32 to; // Recipient address.
-        uint256 amountLD; // Amount to send in local decimals.
-        uint256 minAmountLD; // Minimum amount to send in local decimals.
-        bytes extraOptions; // Additional options supplied by the caller to be used in the LayerZero message.
-        bytes composeMsg; // The composed message for the send() operation.
-        bytes oftCmd; // The OFT command to be executed, unused in default OFT implementations.
-    }
-
-
-    struct MessagingFee {
-        uint256 nativeFee; // Fee amount in native gas token.
-        uint256 lzTokenFee; // Fee amount in ZRO token.
-    }
-
-    struct MessagingReceipt {
-        MessagingFee fee;
-        bytes32 guid;
-        uint64 nonce;
-    }
-
-    function quoteSend(
-        SendParam calldata _sendParam,
-        bool _payInLzToken
-    ) external view returns (MessagingFee memory msgFee);
-
-    function send(
-        SendParam calldata _sendParam,
-        MessagingFee memory fee,
-        address _dstAddress
-    ) external payable returns (MessagingReceipt memory receipt);
-
-}
 
 
 contract EthenaCreditBle is Ownable {
@@ -162,18 +127,18 @@ contract EthenaCreditBle is Ownable {
     uint public MAX_LOAN_DURATION = 365 days;
 
     // USDe addresses
-    address public s_usde_token_address;
+    address private s_usde_token_address;
     // sUSDe addresses
-    address public s_susde_token_address;
+    address private s_susde_token_address;
 
     // destination address
-    address public destinationAddress;
+    address private destinationAddress;
 
     // set destination Eid
-    uint32 public destinationEid;
+    uint32 private destinationEid;
 
     // destination address in bytes
-    bytes32 destinationAddressInByte;
+    bytes32 private destinationAddressInByte;
 
     //extraOptions for send
     bytes private extraOptions = hex"0003010011010000000000000000000000000000ea60"; 
@@ -265,7 +230,7 @@ contract EthenaCreditBle is Ownable {
         IOFTCoreLike.MessagingFee memory _fee = usde.quoteSend(sendParam, false);
 
         require(IERC20(s_usde_token_address).transferFrom(msg.sender, address(this), _amount), "Transfer Failed");
-        (IOFTCoreLike.MessagingReceipt memory msgReceipt) = usde.send{ value: _fee.nativeFee }(sendParam, _fee, payable(destinationAddress));
+        usde.send{ value: _fee.nativeFee }(sendParam, _fee, payable(destinationAddress));
 
         collateralList[msg.sender][_collateral_ids] = Collateral(
             false,
@@ -350,7 +315,8 @@ contract EthenaCreditBle is Ownable {
 
     function withdrawLoan(
         uint256 _loan_id,
-        uint256 _collateral_id
+        uint256 _collateral_id,
+        bytes[] calldata pythPriceUpdate
     ) external returns (bool success) {
         if (msg.sender == address(0)) revert ErrorZeroAddressProvided();/// @note: wrong check no need  
         if (loanList[msg.sender][_loan_id].existed == false) revert ErrorAccountNotFound();
@@ -360,12 +326,11 @@ contract EthenaCreditBle is Ownable {
 
         //calculate worth of USDe to eth
         uint256 loan_amount = loanList[msg.sender][_loan_id].amount;
-        //console.log(loan_amount);
-        uint256 ethPrice = this.updatePrice(loan_amount);
-        //console.log(ethPrice);
+        uint256 ethPrice = this.updatePrice(pythPriceUpdate, loan_amount);
+        //uint256 ethPrice = this.updatePrice(loan_amount);
 
         payable(loanList[msg.sender][_loan_id].borrower).transfer(ethPrice); // @note : use low level call syntax
-        uint due_date = block.timestamp + loanList[msg.sender][_loan_id].duration;
+        uint due_date = block.timestamp + loanList[msg.sender][_loan_id].duration * 1 days;
         loanList[msg.sender][_loan_id].due_date = due_date;
         emit disburseLoanEvent(
             true,
@@ -392,7 +357,6 @@ contract EthenaCreditBle is Ownable {
         uint256 _collateral_id,
         uint256 _amount
     ) external returns (bool success) {
-        // @note : i think the user have to repay the eth or the borrowed token , here we are taking the collateral token which is not right
 
         uint total_amount_paid = loanList[msg.sender][_loan_id].total_amount_paid;
         uint amount = loanList[msg.sender][_loan_id].amount;
@@ -455,7 +419,7 @@ contract EthenaCreditBle is Ownable {
         IOFTCoreLike.MessagingFee memory _fee = usde.quoteSend(sendParam, false);
 
         require(IERC20(s_usde_token_address).transferFrom(msg.sender, address(this), _amount), "Transfer Failed");
-        (IOFTCoreLike.MessagingReceipt memory msgReceipt) = usde.send{ value: _fee.nativeFee }(sendParam, _fee, payable(destinationAddress));
+        usde.send{ value: _fee.nativeFee }(sendParam, _fee, payable(destinationAddress));
 
         uint256 total = (_amount * multiplier) / s_investor_rate;
         investorList[msg.sender][_investment_ids] = InvestorInfo(
@@ -463,7 +427,7 @@ contract EthenaCreditBle is Ownable {
             _amount,
             total / multiplier,
             block.timestamp,
-            block.timestamp + _duration,
+            block.timestamp + (_duration * 1 days),
             _investment_ids,
             false,
             true
@@ -472,7 +436,7 @@ contract EthenaCreditBle is Ownable {
             msg.sender,
             _amount,
             total / multiplier,
-            block.timestamp + _duration,
+            block.timestamp + (_duration * 1 days),
             _investment_ids
         );
         _investment_ids++;
@@ -492,8 +456,8 @@ contract EthenaCreditBle is Ownable {
     ) public returns (bool) {
         if (investorList[msg.sender][_investment_id].existed == false)
             revert ErrorInvestorNotFound();
-        if (investorList[msg.sender][_investment_id].withdrawal_date > block.timestamp)
-            revert ErrorNotEligibleToWithDraw();
+        /**if (investorList[msg.sender][_investment_id].withdrawal_date > block.timestamp)
+            revert ErrorNotEligibleToWithDraw();**/
         if (investorList[msg.sender][_investment_id].paid)
             revert ErrorInvestmentRepaid();
         uint256 total_amount_to_withdraw = investorList[msg.sender][_investment_id].total_amount +
@@ -510,40 +474,11 @@ contract EthenaCreditBle is Ownable {
         return true;
     }
 
-    /**
-     * cooldownAssetsUSDe - withdraw your investment after a year of investment
-     * @param _amount - Amount to cool down
-     * function cools down asset, essential prepare assets withrawal
-     * only owner can call this function
-     */
 
-    function cooldownAssetsUSDe(uint256 _amount) onlyOwner public returns(bool success){
-        (bool sent, bytes memory data) = s_susde_token_address.call(abi.encodeWithSignature("cooldownAssets(uint256)", _amount));
-        //console.logBytes(data);
-        require(sent , "failed");
-        return sent;
-    }
-
-    /**
-     * unstakeAssetsUSDe - withdraw your investment after a year of investment
-     * function unstake sUSDe Asset
-     * only owner can call this function
-     */
-
-
-    function unstakeAssetsUSDe() onlyOwner public returns(bool success){
-        (bool sent, bytes memory data) = s_susde_token_address.call(abi.encodeWithSignature("unstake(address)", address(this)));
-        //console.logBytes(data);
-        require(sent , "failed");
-        return sent;
-    }
-
-
-    //function updatePrice(bytes[] calldata pythPriceUpdate) external {
-    function updatePrice(uint256 amount) view external returns(uint256) {
-        //uint updateFee = pyth.getUpdateFee(pythPriceUpdate);
-        //pyth.updatePriceFeeds{ value: updateFee }(pythPriceUpdate);
-        PythStructs.Price memory price = pyth.getPriceNoOlderThan(priceFeedId, 360000);
+    function updatePrice(bytes[] calldata pythPriceUpdate, uint256 amount) external returns(uint256) {
+        uint updateFee = pyth.getUpdateFee(pythPriceUpdate);
+        pyth.updatePriceFeeds{ value: updateFee }(pythPriceUpdate);
+        PythStructs.Price memory price = pyth.getPriceNoOlderThan(priceFeedId, 60);
         uint ethPrice18Decimals = (uint(uint64(price.price)) * (10 ** 18)) /
         (10 ** uint8(uint32(-1 * price.expo)));
         uint usdeValue = ethPrice18Decimals / amount;
@@ -551,34 +486,6 @@ contract EthenaCreditBle is Ownable {
         return usde_eth_value;
     }
 
-
-    function quoteSend(
-        uint256 _amountLD, 
-        uint256 _minAmountLD
-    ) external returns(bool success){
-        bytes memory _extraOptions = hex"0003010011010000000000000000000000000000ea60"; 
-        bytes32 _to = bytes32(uint256(uint160(destinationAddress)));
-        IOFTCoreLike.SendParam memory sendParam = IOFTCoreLike.SendParam(destinationEid, _to, _amountLD, _minAmountLD, _extraOptions, bytes(""), bytes(""));
-        IOFTCoreLike usde = IOFTCoreLike(s_usde_token_address);
-        IOFTCoreLike.MessagingFee memory _fee = usde.quoteSend(sendParam, false);
-        console.log(_fee.nativeFee);
-        return true;
-    }
-
-    function sendData(
-        uint256 _amountLD, 
-        uint256 _minAmountLD
-    ) external returns(bool){
-        bytes32 _to = bytes32(uint256(uint160(destinationAddress)));
-        bytes memory _extraOptions = hex"0003010011010000000000000000000000000000ea60"; 
-        IOFTCoreLike.SendParam memory sendParam = IOFTCoreLike.SendParam(destinationEid, _to, _amountLD, _minAmountLD, _extraOptions, bytes(""), bytes(""));
-        IOFTCoreLike usde = IOFTCoreLike(s_usde_token_address);
-        IOFTCoreLike.MessagingFee memory _fee = usde.quoteSend(sendParam, false);
-        require(IERC20(s_usde_token_address).transferFrom(msg.sender, address(this), _amountLD), "Transfer Failed");
-        IOFTCoreLike.MessagingReceipt memory receipt = usde.send{ value: _fee.nativeFee }(sendParam, _fee, payable(destinationAddress));
-        
-        return true;
-    }
 
     function setDestinationAddressAndEid(address _dstOwner, uint32 _dstEid) onlyOwner external returns(bool) {
         destinationAddress = _dstOwner;

@@ -4,60 +4,73 @@ import styles from "@/styles/Home.module.css";
 import CustomInput from "@/components/CustomInput";
 import CustomButton from "@/components/Button";
 import { Formik } from "formik";
-import { invest } from "@/util";
-//import { toast } from "react-hot-toast";
-import { useActiveAccount } from "thirdweb/react";
+import { loanRequest } from "@/util";
+import { toast } from "react-hot-toast";
 import { Select } from "@/components/ui/select";
-import { lists } from "../../loans/request-loan/[id]/page";
-import toast from "react-hot-toast";
+import { useActiveAccount } from "thirdweb/react";
 
-const Invest = () => {
+
+export const lists = [
+    { id: 1, month: "1 month" },
+    { id: 2, month: "2 months" },
+    { id: 3, month: "3 months" },
+    { id: 4, month: "4 months" },
+    { id: 5, month: "5 months" },
+    { id: 6, month: "6 months" },
+    { id: 7, month: "7 months" },
+    { id: 8, month: "8 months" },
+    { id: 9, month: "9 months" },
+    { id: 10, month: "10 months" },
+    { id: 11, month: "11 months" },
+    { id: 12, month: "12 months" },
+];
+
+
+const LoanRequest = ({
+  params,
+}: {
+  params: { id: string; };
+}) => {
   const smartAccount = useActiveAccount();
 
-  const handleInvestSubmit = (
+  const handleLoanRequest = (
     values: {
       account: any;
+      collateral_id: number;
       amount: number;
-      duration: number;
+      duration: any;
     },
+    setSubmitting: { (isSubmitting: boolean): void; (arg0: boolean): void }
   ) => {
     setTimeout(async () => {
-      values.account = smartAccount ? smartAccount : undefined;
+      //values.duration = moment().add(values.duration, "months").unix();
       values.duration = values.duration * 30;
-
-      const response: any = await invest(
-        values.account,
-        values.amount,
-        values.duration
-      );
-      console.log(response);
+      values.account = smartAccount ? smartAccount : undefined;
+      const response: any = await loanRequest(values);
       if (response) toast.success(response);
+      setSubmitting(false);
     }, 400);
   };
 
   return (
     <>
-      <div
-        className="container ml-20"
-        style={{ width: "-webkit-fill-available" }}
-      >
-        <h1 className="p-4 text-3xl">Invest</h1>
+      <div className="container ml-16 mr-5">
+        <h1 className="p-4 text-3xl">Request for loan</h1>
         <div className={styles.content}>
           <div className="container mx-auto">
             <div className="p-4">
-              <h1 className="">Add amount</h1>
               <Formik
                 initialValues={{
+                  account: smartAccount ? smartAccount : undefined,
+                  collateral_id: Number(params.id),
                   amount: 0,
                   duration: 0,
-                  account: smartAccount ? smartAccount : undefined,
                 }}
-                onSubmit={(values) =>
-                  handleInvestSubmit(values)
+                onSubmit={(values, { setSubmitting }) =>
+                  handleLoanRequest(values, setSubmitting)
                 }
               >
                 {({
-                  //values,
                   errors,
                   touched,
                   handleChange,
@@ -82,11 +95,11 @@ const Invest = () => {
                     />
                     {errors.duration && touched.duration && errors.duration}
                     <CustomButton
-                      value="Submit"
+                      value="Request"
                       type={"button"}
                       style={{ float: "inline-end" }}
                       disabled={isSubmitting}
-                      onClick={handleSubmit}
+                      onClick={() => handleSubmit()}
                     />
                   </form>
                 )}
@@ -99,4 +112,4 @@ const Invest = () => {
   );
 };
 
-export default Invest;
+export default LoanRequest;

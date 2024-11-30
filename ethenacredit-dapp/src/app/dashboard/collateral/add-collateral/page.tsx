@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import styles from "@/styles/Home.module.css";
 import CustomInput from "@/components/CustomInput";
@@ -13,7 +14,7 @@ const AddCollateral = () => {
   const handleAddCollateralSubmit = (
     values: {
       amount: number;
-      account: unknown;
+      account: any;
     },
     setSubmitting: { (isSubmitting: boolean): void; (arg0: boolean): void }
   ) => {
@@ -58,7 +59,6 @@ const AddCollateral = () => {
                 }) => (
                   <form onSubmit={handleSubmit}>
                     <CustomInput
-                      //value={values.price}
                       placeholder="Amount"
                       name="amount"
                       style={{ color: "black" }}

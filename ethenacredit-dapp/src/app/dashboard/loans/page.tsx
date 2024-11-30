@@ -39,6 +39,10 @@ import {
 } from "@/components/ui/table";
 import { BigNumberish } from "ethers";
 import Link from "next/link";
+import { withdrawLoan } from "@/util";
+import { useActiveAccount } from "thirdweb/react";
+import toast from "react-hot-toast";
+
 
 export type Loan = {
   id: any;
@@ -51,6 +55,37 @@ export type Loan = {
   total_amount_paid: BigNumberish;
   collateral_id: BigNumberish;
 };
+
+const InnerCell = ({ row }: any) => {
+  const smartAccount = useActiveAccount();
+  const handleWithDrawLoan = () => {
+    setTimeout(async () => {
+      const account = smartAccount ? smartAccount : undefined;
+      const loan_id = row.original.id;
+      const collateral_id = row.original.collateral_id;
+      const amount = Number(row.original.amount) / 1000000000000000000;
+      const response: any = await withdrawLoan(account, amount, loan_id, collateral_id);
+      if (response) toast.success(response);
+    }, 400);
+  };
+
+      return (
+        <div className="capitalize">
+          {row.getValue("loan_disbursed") ? (
+            "Yes"
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleWithDrawLoan}
+              className="border-primary"
+            >
+              dusburse
+            </Button>
+          )}
+        </div>
+      );
+}
 
 const columns: ColumnDef<Loan>[] = [
   {
@@ -105,7 +140,7 @@ const columns: ColumnDef<Loan>[] = [
     cell: ({ row }) => {
       return (
         <div className="text-right font-medium">
-          {`${row.getValue("amount")}`}{" "}
+          {`${Number(row.getValue("amount")) / 1000000000000000000}`}{" "}
         </div>
       );
     },
@@ -116,7 +151,7 @@ const columns: ColumnDef<Loan>[] = [
     cell: ({ row }) => {
       return (
         <div className="text-right font-medium">
-          {`${row.getValue("duration")}`}{" "}
+          {`${row.getValue("duration")} days`}{" "}
         </div>
       );
     },
@@ -153,11 +188,7 @@ const columns: ColumnDef<Loan>[] = [
   {
     accessorKey: "loan_disbursed",
     header: "Disbursed",
-    cell: ({ row }) => (
-      <div className="capitalize">
-        {row.getValue("loan_disbursed") ? "Yes" : "No"}
-      </div>
-    ),
+    cell: ({ row }) => <InnerCell row={row} />,
   },
   //end
   {
@@ -199,9 +230,7 @@ const columns: ColumnDef<Loan>[] = [
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem>
-              <Link
-                href={`/dashboard/loans/pay-loan/${request.id}`}
-              >
+              <Link href={`/dashboard/loans/pay-loan/${request.id}`}>
                 Pay Loan
               </Link>
             </DropdownMenuItem>
@@ -284,7 +313,7 @@ const Loans = () => {
 
   return (
     <div
-      className="ml-10 mr-10 text-white"
+      className="ml-10 text-white"
       style={{ width: "-webkit-fill-available" }}
     >
       <div className="flex justify-between">

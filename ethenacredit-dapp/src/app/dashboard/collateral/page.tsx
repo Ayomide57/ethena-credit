@@ -101,7 +101,7 @@ const columns: ColumnDef<Collateral>[] = [
     cell: ({ row }) => {
       return (
         <div className="text-right font-medium">
-          {`${row.getValue("amount")}`}{" "}
+          {`${Number(row.getValue("amount")) / 1000000000000000000}`}{" "}
         </div>
       );
     },

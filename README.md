@@ -1,69 +1,55 @@
 ## EthenaCredit
 
 ## Title
-EthenaCredit is an Undercollateralise lending platform that gives out more loan to users than their collateral. While this system provides a valuable service, several challenges hinder its efficiency and user experience:
+EthenaCredit is an undercollateralized cross chain lending platform that allows users to borrow amounts exceeding the value of their collateral. 
+
+# How it works
+Users can deposit the USDe token as collateral, making them eligible to borrow at a 1:1.5 ratio, where the loan amount equals the collateral plus half of its value (Loan Amount = Collateral + Collateral/2). The deposited USDe tokens are staked into the Staked USDe contract, generating staking rewards. These rewards are utilized to offset the user’s loan in case of default, providing an additional layer of security for the platform.
+
+
+Overcollateralized lending protocols like AAVE provide users with the ability to borrow assets by locking collateral that exceeds the loan value, ensuring the security and solvency of the platform. While this model minimizes risk for lenders, it presents several challenges:
 
 
 
-## Problem
+## Problem Statement
 
 Title: Over Collateralise Lending Protocol 
-Bullets:
-Complex Application Process: The requirement for detailed property information from ChainProperty can overwhelm users, leading to incomplete submissions and delays in loan approval.
 
-Inefficient Loan Verification: The current loan verification process may be slow, resulting in longer wait times for businesses in need of immediate financial support.
+Capital Inefficiency: Users are required to overcollateralize loans, often locking up more assets than they wish to borrow, which limits capital utilization and discourages participation from users with limited resources.
 
-Delayed Fund Disbursement: After loan approval, ensuring prompt and accurate disbursement of funds is critical to meeting the operational needs of businesses.
+Volatility Risk: The reliance on volatile cryptocurrencies as collateral creates liquidation risks, especially during rapid market downturns, which can lead to significant losses for borrowers.
+
+Complexity for New Users: Navigating decentralized finance (DeFi) protocols like AAVE can be intimidating for newcomers due to intricate user interfaces, lack of clarity in risk parameters, and limited educational resources.
+
+Limited Accessibility: High collateral requirements exclude potential borrowers with insufficient capital, reducing inclusivity and preventing broader adoption of DeFi lending.
+
+Liquidity Management: Maintaining adequate liquidity to fulfill borrowing demands while ensuring sufficient returns for lenders remains a balancing act, particularly during periods of high market volatility.
+
 
 Proposed Solution
 To address these challenges, we propose the following solutions:
 
-Streamlined Application Process: Simplify the application interface to guide users step-by-step through the submission of property information. Incorporate tooltips and examples to assist users in providing complete and accurate data.
-
-
-Clear Payback Option Guidance: Introduce an interactive loan calculator that visually demonstrates the impact of different payback periods on monthly payments and total interest. This tool will help users make informed decisions about their loan options.
-
-Rapid Fund Disbursement System: Develop an automated disbursement mechanism that ensures funds are released promptly after approval. Establish clear timelines for disbursement and keep users informed throughout the process.
 
 ## Project Information
 
 - **Name:** EthenaCredit
 - **Title:** EthenaCredit
 - **Version:** 0.0.1
-- **Summary:** The purpose of this contract is provide users can obtain more loans with less collateral.
+- **Summary:** Undercollateralized lending platform that allows users to borrow amounts exceeding the value of their collateral
+
 
 ## Process 
 
-* Company Registration: Businesses register on the platform to apply for loans.
-* Collateral: Loans secured against real-world assets (RWA).
-* Flexible Payback Periods: Choose from 6, 12, 18, 24, or 36 months.
 
-* Property Information: Gather details from ChainProperty.
-* Verification: Review and approve loan applications.
-* Loan Disbursement: Funds are released upon approval.
-* Total Loan Amount / Number of Payment Periods = Monthly Payment
+## Features Yet to be Implemented
 
-## Functional
-1. User Registration
-2. Adding Collateral
-3. Loan Request
-4. Admin can create a loan
-5. Loan Disbursal (No Interface)
-6. Update Loan Status
-7. Investors can invest and withdraw after 1 year
+SmartContract
+1. The EthenaCreditBle contract is currently not fully operational. While users can deposit their collateral into the EthenaCredit Sepolia contract, the LzReceive function in the EthenaCredit contract is not yet functional due to technical challenges. The LzReceive function is a critical component responsible for transferring users' deposits from BLE testnets and depositing their collateral into the sUSDe contract.
 
+User -> deposit collateral on Sepolia Network -> EthenaCredit Smart Contract calls deposit function on sUSDe smartcontract (lzReceive)
 
-
-## Features Yet to be Implement
-
-Frontend
-1. Query Loan Lists, Loan Request Lists, Total Users List
-2. Loan Disbursal
-3. Investment page
-
-
-
-
+2. lzReceive Function: this function enables EthenaCreditBle to initiate CoolDownAsset and unstake function on sUSDe SmartContract
+The EthenaCreditBle contract interacts with the EthenaCredit contract by invoking the lzReceive function. This function initiates the cooldown process for assets on the sUSDe contract within the Sepolia network, unstakes the assets, and returns the corresponding amount to the lzReceive function in the EthenaCreditBle smart contract.
 
 ## Author Information
 
@@ -82,16 +68,16 @@ This project is licensed under the [MIT License](https://opensource.org/licenses
 
 ## Contract Addresses
 
-EthenaCredit Contract is deployed to [0xF0367544DAfCF53649195529f687155B52098ba4] on Sepolia
-Deployer: [0x15427D97E45e3374DF934B0f1292C8556D1B79DD]
-Transaction hash: 0x0be9bec451fba979b54f5e6c4be53436a0bad26d93cf17bc4876b431f91beeba
-(https://neoxt4scan.ngd.network/tx/0x0be9bec451fba979b54f5e6c4be53436a0bad26d93cf17bc4876b431f91beeba) on Sepolia.
+EthenaCredit Contract is deployed to [0xcACe89Dc6dBcEC43E449EbAb86E62b2d2C71F24e] on Sepolia
+Deployer: [0x78078EdDaAa3a5a07aaE04b45AdB44599FC50aef]
+Transaction hash: 0x0d9833f208654ca7b2a37cab2c636c95a4c15f3a56f51ab5354872be1f116c7c
+(https://sepolia.etherscan.io/tx/0x0d9833f208654ca7b2a37cab2c636c95a4c15f3a56f51ab5354872be1f116c7c) on Sepolia.
 
 
-Registrar Contract is deployed to [0x1bddabb544fffd89ed263b28cf5827635b60e345] on Sepolia
-Deployer: [0x15427D97E45e3374DF934B0f1292C8556D1B79DD]
-Transaction hash: 0x8c1403f83620bc37d931749198ad78000de1957aeb8a8b2c4c85d21536921919
-(https://neoxt4scan.ngd.network/tx/0x8c1403f83620bc37d931749198ad78000de1957aeb8a8b2c4c85d21536921919) on Sepolia.
+EthenaCreditBle Contract is deployed to [0x5626049933b6Ca9642023D57eaBAd2030a285eb9] on Ble Testnet
+Deployer: [0x78078EdDaAa3a5a07aaE04b45AdB44599FC50aef]
+Transaction hash: 0x45e1f33a4dad088bef962b75b2a5bcd2e7d810bc9876008632b7bdf1a211f703
+(https://testnet.explorer.ethena.fi/tx/0x45e1f33a4dad088bef962b75b2a5bcd2e7d810bc9876008632b7bdf1a211f703) on Ble Testnet.
 
 ## Usage
 

@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/table";
 import { BigNumberish } from "ethers";
 import Link from "next/link";
+import moment from 'moment';
 
 export type Investment = {
   id: any;
@@ -101,7 +102,7 @@ const columns: ColumnDef<Investment>[] = [
     cell: ({ row }) => {
       return (
         <div className="text-right font-medium">
-          {`${row.getValue("amount")}`}{" "}
+          {`${Number(row.getValue("amount")) / 1000000000000000000}`}{" "}
         </div>
       );
     },
@@ -112,7 +113,9 @@ const columns: ColumnDef<Investment>[] = [
     cell: ({ row }) => {
       return (
         <div className="text-right font-medium">
-          {`${row.getValue("accumulated_interest")}`}{" "}
+          {`${
+            Number(row.getValue("accumulated_interest")) / 1000000000000000000
+          }`}{" "}
         </div>
       );
     },
@@ -123,7 +126,7 @@ const columns: ColumnDef<Investment>[] = [
     cell: ({ row }) => {
       return (
         <div className="text-right font-medium">
-          {`${row.getValue("withdrawal_date")}`}{" "}
+          {`${moment.unix(Number(row.getValue("withdrawal_date")))}`}{" "}
         </div>
       );
     },

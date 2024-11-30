@@ -6,10 +6,10 @@ import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@pythnetwork/pyth-sdk-solidity/IPyth.sol";
 import "@pythnetwork/pyth-sdk-solidity/PythStructs.sol";
-import { OApp, MessagingFee, Origin } from "@layerzerolabs/oapp-evm/contracts/oapp/OApp.sol";
+import {IsUSDeLike} from "./interfaces/IsUSDeLike.sol";
 
 
-contract EthenaCredit is OApp  {
+contract EthenaCredit is Ownable  {
     /**
      * @dev This contract allows user to register, add collateral and apply for 
      * loans with the collateral after verification
@@ -102,6 +102,19 @@ contract EthenaCredit is OApp  {
         bool paid
     );
 
+    //
+    event bleDepositEvent(
+        address indexed depositor,
+        uint256 indexed amount,
+        string message,
+        uint32 srcEid,
+        bytes32 guid,
+        bool paid
+    );
+
+
+
+
     // private counters
     uint256 public _loan_ids;
     uint256 public _collateral_ids;
@@ -128,6 +141,10 @@ contract EthenaCredit is OApp  {
     address public s_usde_token_address;
     // sUSDe addresses
     address public s_susde_token_address;
+
+    // ble lzendpoint
+    address private lzEndpoint;
+
 
     /// @notice The oracle contract
     // IPyth oracle;
@@ -185,10 +202,8 @@ contract EthenaCredit is OApp  {
         address _susde_token_address, 
         address _pyth_contract, 
         bytes32 _priceFeedId, 
-        uint8 _investor_rate,
-        address _endpoint, 
-        address _delegate
-    ) Ownable(msg.sender) OApp(_endpoint, _delegate) {
+        uint8 _investor_rate
+    ) Ownable(msg.sender)  {
         s_usde_token_address = _usde_token_address;
         s_susde_token_address = _susde_token_address;
         s_investor_rate = _investor_rate;
@@ -198,15 +213,13 @@ contract EthenaCredit is OApp  {
 
     /**
      * addCollateral - add users collateral (USDe) 
-     * Check if collateral existed using the property registration number
+     * @notice Check if collateral existed using the property registration number
      * @param _amount - collateral amount
      */
 
     function addCollateral(uint256 _amount) payable external returns (bool success) {
         if(_amount < MIN_COLLATERAL_AMOUNT && _amount > MAX_COLLATERAL_AMOUNT) revert ErrorAmountShouldBeBetweenMinimumAndMaximumAmount(_amount);
         require(IERC20(s_usde_token_address).transferFrom(msg.sender, address(this), _amount), "Transfer Failed");
-        //(bool sent, )= s_susde_token_address.call{value: _amount}(abi.encodeWithSignature("deposit(uint256,address)", _amount, address(this)));
-        //if(!sent) revert ErrorTokenTranferFailed();
         collateralList[msg.sender][_collateral_ids] = Collateral(
             false,
             true,
@@ -227,9 +240,9 @@ contract EthenaCredit is OApp  {
 
 
     /**
-     * loanRequest - users request for a specific amount of loan, max is collateral + collateral/2 (50%) 
-     * Check if amount is within eligible amount users can borrow collateral + collateral/2
-     * Check if duration user provided greater than contract max loan duration
+     * @dev loanRequest - users request for a specific amount of loan, max is collateral + collateral/2 (50%) 
+     * @notice Check if amount is within eligible amount users can borrow collateral + collateral/2
+     * @notice Check if duration user provided greater than contract max loan duration
      *  
      * @param _collateral_id - The collateral Id
      * @param _amount - loan amount
@@ -280,16 +293,17 @@ contract EthenaCredit is OApp  {
 
 
     /**
-     * paymentDisbursal - disburse loan to the borrower
-     * Check if _borrower address is not zero address
-     * check if loan had been previously disbursed i.e false and set disburse to true 
+     * @dev paymentDisbursal - disburse loan to the borrower
+     * @notice Check if _borrower address is not zero address
+     * @notice check if loan had been previously disbursed i.e false and set disburse to true 
      * @param _loan_id - The Id of the created loan
      * @param _collateral_id - The Id of user's collateral
      */
 
     function withdrawLoan(
         uint256 _loan_id,
-        uint256 _collateral_id
+        uint256 _collateral_id,
+        bytes[] calldata pythPriceUpdate
     ) external returns (bool success) {
         if (msg.sender == address(0)) revert ErrorZeroAddressProvided();/// @note: wrong check no need  
         if (loanList[msg.sender][_loan_id].existed == false) revert ErrorAccountNotFound();
@@ -299,15 +313,19 @@ contract EthenaCredit is OApp  {
 
         //calculate worth of USDe to eth
         uint256 loan_amount = loanList[msg.sender][_loan_id].amount;
-        //console.log(loan_amount);
-        uint256 ethPrice = this.updatePrice(loan_amount);
-        //console.log(ethPrice);
+        uint256 ethPrice = this.updatePrice(pythPriceUpdate, loan_amount);
+        //uint256 ethPrice = this.updatePrice(loan_amount);
+
         IERC20(s_usde_token_address).approve(address(s_susde_token_address), loan_amount);
-        (bool sent, bytes memory data) = s_susde_token_address.call(abi.encodeWithSignature("deposit(uint256,address)", loan_amount, address(this)));
-        if(!sent) revert ErrorTokenTranferFailed();
+
+        IsUSDeLike susde = IsUSDeLike(s_susde_token_address);
+
+        uint256 shares = susde.deposit(loan_amount, address(this));
+
+        if(shares == 0) revert ErrorTokenTranferFailed();
 
         payable(loanList[msg.sender][_loan_id].borrower).transfer(ethPrice); // @note : use low level call syntax
-        uint due_date = block.timestamp + loanList[msg.sender][_loan_id].duration;
+        uint due_date = block.timestamp + loanList[msg.sender][_loan_id].duration * 1 days;
         loanList[msg.sender][_loan_id].due_date = due_date;
         emit disburseLoanEvent(
             true,
@@ -321,11 +339,11 @@ contract EthenaCredit is OApp  {
 
 
     /**
-     * payLoan - pay loan
+     * @dev payLoan - pay loan
      * @param _loan_id - The Id user's loan
      * @param _collateral_id - The Id of user's collateral
-     * Check the remaining balance to be paid in eth and if all had been paid, prevent user from paying loan
-     * check if loan had been disbursed
+     * @notice Check the remaining balance to be paid in eth and if all had been paid, prevent user from paying loan
+     * @notice check if loan had been disbursed
      */
 
 
@@ -334,7 +352,6 @@ contract EthenaCredit is OApp  {
         uint256 _collateral_id,
         uint256 _amount
     ) external returns (bool success) {
-        // @note : i think the user have to repay the eth or the borrowed token , here we are taking the collateral token which is not right
 
         uint total_amount_paid = loanList[msg.sender][_loan_id].total_amount_paid;
         uint amount = loanList[msg.sender][_loan_id].amount;
@@ -357,10 +374,10 @@ contract EthenaCredit is OApp  {
     }
 
     /**
-     * withdrawCollateral - function to withdraw user's collateral
+     * @dev withdrawCollateral - function to withdraw user's collateral
      * @param _collateral_id - Collateral ID
-     * check if this particular collateral active
-     * delete collateral after user withdraws collateral
+     * @notice check if this particular collateral active
+     * @notice delete collateral after user withdraws collateral
      */
 
     function withdrawCollateral(
@@ -377,27 +394,30 @@ contract EthenaCredit is OApp  {
     }
 
     /**
-     * Invest - Invest minimum 1 ether into the business
+     * @dev Invest - Invest minimum 1 ether into the business
      * @param _amount - Investment amount
      * @param _duration - The duration of the investment
-     * Check if amount is less than the minimum invesment amount
-     * check to see if the duration is higher than now and higher or equal to 30 days
+     * @notice Check if amount is less than the minimum invesment amount
+     * @notice check to see if the duration is higher than now and higher or equal to 30 days
      */
     function invest(uint _amount, uint256 _duration) external returns (bool success) {
         if (_amount < minimum_investment) revert ErrorInsufficientFund();
         if (block.timestamp + minimum_investment_period <= block.timestamp + _duration) revert ErrorInvestmentDurationMustMoreThanAMonth();
         require(IERC20(s_usde_token_address).transferFrom(msg.sender, address(this), _amount), "Transfer Failed");
         IERC20(s_usde_token_address).approve(address(s_susde_token_address), _amount);
-        (bool sent, bytes memory data) = s_susde_token_address.call(abi.encodeWithSignature("deposit(uint256,address)", _amount, address(this)));
-        if(!sent) revert ErrorTokenTranferFailed();
 
+        IsUSDeLike susde = IsUSDeLike(s_susde_token_address);
+
+        uint256 shares = susde.deposit(_amount, address(this));
+
+        if(shares == 0) revert ErrorTokenTranferFailed();
         uint256 total = (_amount * multiplier) / s_investor_rate;
         investorList[msg.sender][_investment_ids] = InvestorInfo(
             msg.sender,
             _amount,
             total / multiplier,
             block.timestamp,
-            block.timestamp + _duration,
+            block.timestamp + (_duration * 1 days),
             _investment_ids,
             false,
             true
@@ -406,7 +426,7 @@ contract EthenaCredit is OApp  {
             msg.sender,
             _amount,
             total / multiplier,
-            block.timestamp + _duration,
+            block.timestamp + (_duration * 1 days),
             _investment_ids
         );
         _investment_ids++;
@@ -426,8 +446,8 @@ contract EthenaCredit is OApp  {
     ) public returns (bool) {
         if (investorList[msg.sender][_investment_id].existed == false)
             revert ErrorInvestorNotFound();
-        if (investorList[msg.sender][_investment_id].withdrawal_date > block.timestamp)
-            revert ErrorNotEligibleToWithDraw();
+        /**if (investorList[msg.sender][_investment_id].withdrawal_date > block.timestamp)
+            revert ErrorNotEligibleToWithDraw();**/
         if (investorList[msg.sender][_investment_id].paid)
             revert ErrorInvestmentRepaid();
         uint256 total_amount_to_withdraw = investorList[msg.sender][_investment_id].total_amount +
@@ -445,54 +465,37 @@ contract EthenaCredit is OApp  {
     }
 
     /**
-     * cooldownAssetsUSDe - withdraw your investment after a year of investment
+     * @dev cooldownAssetsUSDe - withdraw your investment after a year of investment
      * @param _amount - Amount to cool down
-     * function cools down asset, essential prepare assets withrawal
+     * @notice function cools down asset, essential prepare assets withrawal
      * only owner can call this function
      */
 
 
-    function cooldownAssetsUSDe(uint256 _amount) onlyOwner public returns(bool success){
-        (bool sent, bytes memory data) = s_susde_token_address.call(abi.encodeWithSignature("cooldownAssets(uint256)", _amount));
-        //console.logBytes(data);
-        require(sent , "failed");
-        return sent;
+    function cooldownAssetsUSDe(uint256 _amount) onlyOwner public returns(uint256){
+        IsUSDeLike susde = IsUSDeLike(s_susde_token_address);
+        uint256 shares = susde.cooldownAssets(_amount);
+        require(shares > 0 , "failed");
+        return shares;
     }
 
     /**
-     * unstakeAssetsUSDe - withdraw your investment after a year of investment
+     * @dev unstakeAssetsUSDe - withdraw your investment after a year of investment
      * function unstake sUSDe Asset
      * only owner can call this function
      */
 
 
     function unstakeAssetsUSDe() onlyOwner public returns(bool success){
-        (bool sent, bytes memory data) = s_susde_token_address.call(abi.encodeWithSignature("unstake(address)", address(this)));
-        //console.logBytes(data);
-        require(sent , "failed");
-        return sent;
+        IsUSDeLike susde = IsUSDeLike(s_susde_token_address);
+        susde.unstake(address(this));
+        return true;
     }
 
-    function _lzReceive(
-        Origin calldata _origin, // struct containing info about the message sender
-        bytes32 _guid, // global packet identifier
-        bytes calldata payload, // encoded message payload being received
-        address _executor, // the Executor address.
-        bytes calldata _extraData // arbitrary data appended by the Executor
-    ) internal override {
-            //data = abi.decode(payload, (string)); // your logic here
-            //(bool sent, bytes memory data) = s_susde_token_address.call(abi.encodeWithSignature("deposit(uint256,address)", loan_amount, address(this)));
-        //if(!sent) revert ErrorTokenTranferFailed();
-
-    }
-
-
-
-    //function updatePrice(bytes[] calldata pythPriceUpdate) external {
-    function updatePrice(uint256 amount) view external returns(uint256) {
-        //uint updateFee = pyth.getUpdateFee(pythPriceUpdate);
-        //pyth.updatePriceFeeds{ value: updateFee }(pythPriceUpdate);
-        PythStructs.Price memory price = pyth.getPriceNoOlderThan(priceFeedId, 360000);
+    function updatePrice(bytes[] calldata pythPriceUpdate, uint256 amount) external returns(uint256) {
+      uint updateFee = pyth.getUpdateFee(pythPriceUpdate);
+        pyth.updatePriceFeeds{ value: updateFee }(pythPriceUpdate);
+        PythStructs.Price memory price = pyth.getPriceNoOlderThan(priceFeedId, 60);
         uint ethPrice18Decimals = (uint(uint64(price.price)) * (10 ** 18)) /
         (10 ** uint8(uint32(-1 * price.expo)));
         uint usdeValue = ethPrice18Decimals / amount;
@@ -518,8 +521,6 @@ contract EthenaCredit is OApp  {
     }
 
 
-    receive() external payable {
-        //this.invest(msg.value);
-    }
+    receive() external payable {}
 }
 
