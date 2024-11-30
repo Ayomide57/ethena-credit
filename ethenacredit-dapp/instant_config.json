@@ -2,15 +2,16 @@
     "version": "1",
     "name": "ethenaCredit",
     "abis": {
-        "ethenaCredit": {
-            "path": "./src/util/constants/chaincredit.abi.json"
-        }
+      "ethenaCredit": {
+        "path": "./src/util/constants/ethenacredit.abi.json"
+      }
     },
-    "chains": [""],
+    "chains": ["11155111"],
     "instances": [{
-      "abi": "ethenaCredit ",
-      "address": "",
-      "chains": "",
-      "startBlock": 234555
-    }]
+      "abi": "ethenaCredit",
+      "address": "0xcACe89Dc6dBcEC43E449EbAb86E62b2d2C71F24e",
+      "chain": "sepolia",
+      "startBlock": 7184074
+    }
+]
 }
