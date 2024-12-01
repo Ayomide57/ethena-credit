@@ -216,7 +216,7 @@ const Collaterals = () => {
             amount: event.args.amount,
             active_loan: event.args.active_loan,
             existed: event.args.existed,
-            withdraw: true
+            withdraw: true,
           })
         );
       }
