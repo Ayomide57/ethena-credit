@@ -9,9 +9,9 @@
     "chains": ["11155111"],
     "instances": [{
       "abi": "ethenaCredit",
-      "address": "0xcACe89Dc6dBcEC43E449EbAb86E62b2d2C71F24e",
+      "address": "0x504204BAfbab7A2203d74232127829C5aa70E990",
       "chain": "sepolia",
-      "startBlock": 7184074
+      "startBlock": 7189450
     }
 ]
 }

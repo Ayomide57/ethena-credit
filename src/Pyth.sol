@@ -35,7 +35,7 @@ contract MyFirstPythContract {
      console2.log(ethPrice18Decimals);
 
 
-    mint();
+    //mint();
   }
  
   // Error raised if the payment is not sufficient

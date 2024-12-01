@@ -39,7 +39,7 @@ import {
 } from "@/components/ui/table";
 import { BigNumberish } from "ethers";
 import Link from "next/link";
-import { withdrawLoan } from "@/util";
+import { withdrawLoan, updatePrice } from "@/util";
 import { useActiveAccount } from "thirdweb/react";
 import toast from "react-hot-toast";
 
@@ -65,7 +65,13 @@ const InnerCell = ({ row }: any) => {
       const collateral_id = row.original.collateral_id;
       const amount = Number(row.original.amount) / 1000000000000000000;
       const response: any = await withdrawLoan(account, amount, loan_id, collateral_id);
-      if (response) toast.success(response);
+      /**const response: any = await updatePrice(
+        account,
+        amount
+      );**/
+      console.log(response);
+
+      //if (response) toast.success(response);
     }, 400);
   };
 
@@ -243,6 +249,21 @@ const columns: ColumnDef<Loan>[] = [
 
 const Loans = () => {
   const [data, setProperties] = useState<any>([]);
+    const smartAccount = useActiveAccount();
+
+    const handleWithDrawLoan = () => {
+      setTimeout(async () => {
+        const account = smartAccount ? smartAccount : undefined;
+        //const loan_id = row.original.id;
+        //const collateral_id = row.original.collateral_id;
+        const amount = Number(15);
+        //const response: any = await withdrawLoan(account, amount, loan_id, collateral_id);
+        const response: any = await updatePrice(account, amount);
+        console.log(response);
+
+        if (response) toast.success(response);
+      }, 400);
+    };
 
   const queryRwaEvents = React.useCallback(async () => {
     const events = await ethenaContract.queryFilter("loanRequestEvent");
@@ -434,6 +455,15 @@ const Loans = () => {
                   className="border-primary"
                 >
                   Next
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleWithDrawLoan}
+                  //disabled={!table.getCanNextPage()}
+                  className="border-primary"
+                >
+                  Update
                 </Button>
               </div>
             </div>

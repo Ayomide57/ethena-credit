@@ -18,7 +18,7 @@ contract EthenaCreditScript is Script {
 
 
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("DEV_PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
         EthenaCredit ethenaCredit = new EthenaCredit(USDe, sUSDe, pythContract, priceFeedId, 10);
 

@@ -33,7 +33,7 @@ contract EthenaCredit is Ownable  {
     error ErrorLoanNotRepaid();
     error ErrorInvestmentRepaid();
     error ErrorAccountNotFound();
-
+    error ErrorLoanDurationMustMoreThanAMonth();
 
     //events
 
@@ -135,6 +135,8 @@ contract EthenaCredit is Ownable  {
 
     //maximum repayment duration
     uint public MAX_LOAN_DURATION = 365 days;
+
+    //maximum repayment duration
 
 
     // USDe addresses
@@ -262,6 +264,8 @@ contract EthenaCredit is Ownable  {
 
         if (_amount > max_loan_amount) revert ErrorYouHaveExceededMaxLoanCollateralEligibility(max_loan_amount);
         if(_duration > MAX_LOAN_DURATION) revert ErrorDurationMustBeLessThanOneYear();
+        if(_duration < minimum_investment_period) revert ErrorLoanDurationMustMoreThanAMonth();
+
         loanList[msg.sender][_loan_ids] = Loan(
             false,
             false,
@@ -286,7 +290,6 @@ contract EthenaCredit is Ownable  {
             0,
             0
         );
-
         _loan_ids++;
 
     }
@@ -314,7 +317,6 @@ contract EthenaCredit is Ownable  {
         //calculate worth of USDe to eth
         uint256 loan_amount = loanList[msg.sender][_loan_id].amount;
         uint256 ethPrice = this.updatePrice(pythPriceUpdate, loan_amount);
-        //uint256 ethPrice = this.updatePrice(loan_amount);
 
         IERC20(s_usde_token_address).approve(address(s_susde_token_address), loan_amount);
 
@@ -352,7 +354,6 @@ contract EthenaCredit is Ownable  {
         uint256 _collateral_id,
         uint256 _amount
     ) external returns (bool success) {
-
         uint total_amount_paid = loanList[msg.sender][_loan_id].total_amount_paid;
         uint amount = loanList[msg.sender][_loan_id].amount;
         if(loanList[msg.sender][_loan_id].loan_disbursed == false) revert ErrorLoanIsYetToBeDisbursed(); //loan is yet to be disbursed 
@@ -381,7 +382,6 @@ contract EthenaCredit is Ownable  {
      */
 
     function withdrawCollateral(
-        //uint256 _loan_id,
         uint256 _collateral_id)
     public payable returns(bool success) {
         //if(loanList[msg.sender][_loan_id].repaid == false) revert ErrorLoanNotRepaid(); 
@@ -446,8 +446,8 @@ contract EthenaCredit is Ownable  {
     ) public returns (bool) {
         if (investorList[msg.sender][_investment_id].existed == false)
             revert ErrorInvestorNotFound();
-        /**if (investorList[msg.sender][_investment_id].withdrawal_date > block.timestamp)
-            revert ErrorNotEligibleToWithDraw();**/
+        if (investorList[msg.sender][_investment_id].withdrawal_date > block.timestamp)
+            revert ErrorNotEligibleToWithDraw();
         if (investorList[msg.sender][_investment_id].paid)
             revert ErrorInvestmentRepaid();
         uint256 total_amount_to_withdraw = investorList[msg.sender][_investment_id].total_amount +
@@ -492,17 +492,17 @@ contract EthenaCredit is Ownable  {
         return true;
     }
 
-    function updatePrice(bytes[] calldata pythPriceUpdate, uint256 amount) external returns(uint256) {
-      uint updateFee = pyth.getUpdateFee(pythPriceUpdate);
-        pyth.updatePriceFeeds{ value: updateFee }(pythPriceUpdate);
-        PythStructs.Price memory price = pyth.getPriceNoOlderThan(priceFeedId, 60);
+    function updatePrice(bytes[] calldata pythPriceUpdate, uint256 amount) external view returns(uint256) {
+        //uint updateFee = pyth.getUpdateFee(pythPriceUpdate);
+        //pyth.updatePriceFeeds{ value: updateFee }(pythPriceUpdate);
+        PythStructs.Price memory price = pyth.getPriceNoOlderThan(priceFeedId, 36000);
+    
         uint ethPrice18Decimals = (uint(uint64(price.price)) * (10 ** 18)) /
         (10 ** uint8(uint32(-1 * price.expo)));
         uint usdeValue = ethPrice18Decimals / amount;
         uint usde_eth_value = 1 ether / usdeValue ;
         return usde_eth_value;
     }
-
     
 
     function getLoanInformation(

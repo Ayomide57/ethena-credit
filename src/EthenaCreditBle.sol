@@ -36,6 +36,7 @@ contract EthenaCreditBle is Ownable {
     error ErrorLoanNotRepaid();
     error ErrorInvestmentRepaid();
     error ErrorAccountNotFound();
+    error ErrorLoanDurationMustMoreThanAMonth();
 
 
     //events
@@ -275,6 +276,8 @@ contract EthenaCreditBle is Ownable {
 
         if (_amount > max_loan_amount) revert ErrorYouHaveExceededMaxLoanCollateralEligibility(max_loan_amount);
         if(_duration > MAX_LOAN_DURATION) revert ErrorDurationMustBeLessThanOneYear();
+        if(_duration < minimum_investment_period) revert ErrorLoanDurationMustMoreThanAMonth();
+
         loanList[msg.sender][_loan_ids] = Loan(
             false,
             false,
@@ -476,9 +479,10 @@ contract EthenaCreditBle is Ownable {
 
 
     function updatePrice(bytes[] calldata pythPriceUpdate, uint256 amount) external returns(uint256) {
-        uint updateFee = pyth.getUpdateFee(pythPriceUpdate);
-        pyth.updatePriceFeeds{ value: updateFee }(pythPriceUpdate);
-        PythStructs.Price memory price = pyth.getPriceNoOlderThan(priceFeedId, 60);
+        //uint updateFee = pyth.getUpdateFee(pythPriceUpdate);
+        //pyth.updatePriceFeeds{ value: updateFee }(pythPriceUpdate);
+        PythStructs.Price memory price = pyth.getPriceNoOlderThan(priceFeedId, 40000);
+    
         uint ethPrice18Decimals = (uint(uint64(price.price)) * (10 ** 18)) /
         (10 ** uint8(uint32(-1 * price.expo)));
         uint usdeValue = ethPrice18Decimals / amount;

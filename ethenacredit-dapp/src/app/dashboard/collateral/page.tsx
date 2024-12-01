@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import { useEffect, useState } from "react";
-import { ethenaContract } from "@/util";
+import { ethenaContract, withdrawCollateral } from "@/util";
 import * as React from "react";
 import {
   ColumnDef,
@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/table";
 import { BigNumberish } from "ethers";
 import Link from "next/link";
+import { useActiveAccount } from "thirdweb/react";
 
 export type Collateral = {
   id: any;
@@ -46,7 +47,40 @@ export type Collateral = {
   amount: BigNumberish;
   active_loan: boolean;
   existed: boolean;
+  withdraw: boolean;
 };
+
+const InnerCell = ({ row }: any) => {
+  const smartAccount = useActiveAccount();
+  const handleWithDrawCollateral = () => {
+    setTimeout(async () => {
+      const account = smartAccount ? smartAccount : undefined;
+      const collateral_id = row.original.id;
+      const response: any = await withdrawCollateral(account, collateral_id);
+      console.log(response);
+
+      //if (response) toast.success(response);
+    }, 400);
+  };
+
+  return (
+    <div className="capitalize">
+      {!row.getValue("withdraw") ? (
+        "Yes"
+      ) : (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleWithDrawCollateral}
+          className="border-primary"
+        >
+          withdraw
+        </Button>
+      )}
+    </div>
+  );
+};
+
 
 const columns: ColumnDef<Collateral>[] = [
   {
@@ -107,10 +141,17 @@ const columns: ColumnDef<Collateral>[] = [
     },
   },
   {
+    accessorKey: "withdraw",
+    header: "Withdraw Collateral",
+    cell: ({ row }) => <InnerCell row={row} />,
+  },
+  {
     accessorKey: "active_loan",
     header: "Loan Status",
     cell: ({ row }) => (
-      <div className="capitalize">{row.getValue("active_loan") ? "Yes" : "No"}</div>
+      <div className="capitalize">
+        {row.getValue("active_loan") ? "Yes" : "No"}
+      </div>
     ),
   },
   //end
@@ -175,6 +216,7 @@ const Collaterals = () => {
             amount: event.args.amount,
             active_loan: event.args.active_loan,
             existed: event.args.existed,
+            withdraw: true
           })
         );
       }

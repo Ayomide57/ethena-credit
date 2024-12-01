@@ -7,10 +7,13 @@ import "forge-std/console.sol";
 
 import {EthenaCreditBle} from "../src/EthenaCreditBle.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { MockPyth } from "@pythnetwork/pyth-sdk-solidity/MockPyth.sol";
+import "@pythnetwork/pyth-sdk-solidity/PythStructs.sol";
 
 contract EthenaCreditBleTest is Test {
     address public USDe = 0x426E7d03f9803Dd11cb8616C65b99a3c0AfeA6dE;
     address public sUSDe = 0x80f9Ec4bA5746d8214b3A9a73cc4390AB0F0E633;
+    MockPyth public pyth;
 
     EthenaCreditBle public ethenaCreditBle;
 
@@ -28,6 +31,31 @@ contract EthenaCreditBleTest is Test {
         ethenaCreditBle = new EthenaCreditBle(USDe, sUSDe, pythContract, priceFeedId, 10);
         address _ethenaCreditSepolia = 0x78078EdDaAa3a5a07aaE04b45AdB44599FC50aef;
         ethenaCreditBle.setDestinationAddressAndEid(_ethenaCreditSepolia, _dstEid);
+    }
+
+        function createEthUpdate(
+        int64 ethPrice
+    ) private view returns (bytes[] memory) {
+        bytes[] memory updateData = new bytes[](1);
+        updateData[0] = pyth.createPriceFeedUpdateData(
+        priceFeedId,
+        ethPrice * 100000, // price
+        10 * 100000, // confidence
+        -5, // exponent
+        ethPrice * 100000, // emaPrice
+        10 * 100000, // emaConfidence
+        uint64(block.timestamp), // publishTime
+        uint64(block.timestamp) // prevPublishTime
+        );
+    
+        return updateData;
+    }
+ 
+    function setEthPrice(int64 ethPrice) private {
+        bytes[] memory updateData = createEthUpdate(ethPrice);
+        uint value = pyth.getUpdateFee(updateData);
+        vm.deal(address(this), value);
+        pyth.updatePriceFeeds{ value: value }(updateData);
     }
 
 //forge test --fork-url https://testnet.rpc.ethena.fi/ --match-path test/EthenaCreditBle.t.sol -vvvvv
@@ -189,7 +217,9 @@ contract EthenaCreditBleTest is Test {
         ethenaCreditBle.loanRequest(_collateral_id, loan_amount, 1 days);
         uint _loan_id = ethenaCreditBle._loan_ids() - 1;
         //assertEq(_old_loan_id - 1, _loan_id);
-        //ethenaCreditBle.withdrawLoan(_loan_id, _collateral_id);
+        bytes[] memory updateData = createEthUpdate(3420);
+
+        //ethenaCreditBle.withdrawLoan(_loan_id, _collateral_id, updateData);
 
         console.log("after withdrawLoan");
         console.logUint(IERC20(USDe).balanceOf(address(ethenaCreditBle)));
@@ -201,12 +231,6 @@ contract EthenaCreditBleTest is Test {
 
     }
 //forge test --fork-url https://testnet.rpc.ethena.fi/ --mt testLoanRequestAndWithdrawLoanBle -vvvvv
-
-    function testUpdatePrice() public view {
-        //uint256 ethPrice = ethenaCredit.updatePrice(25000000000000000000);
-        //console.log(ethPrice);
-    }
-//forge test --fork-url https://testnet.rpc.ethena.fi/ --mt testUpdatePrice -vvvvv
 
 
     function testRequestAndWithdrawAndRepayLoanBle() public {
@@ -228,7 +252,9 @@ contract EthenaCreditBleTest is Test {
         ethenaCreditBle.loanRequest(_collateral_id, loan_amount, 1 days);
         uint _loan_id = ethenaCreditBle._loan_ids() - 1;
         //assertEq(_old_loan_id - 1, _loan_id);
-        //ethenaCreditBle.withdrawLoan(_loan_id, _collateral_id);
+        //bytes[] memory updateData = createEthUpdate(3420);
+
+        //ethenaCreditBle.withdrawLoan(_loan_id, _collateral_id, updateData);
 
         IERC20(USDe).approve(address(ethenaCreditBle), loan_amount);
         ethenaCreditBle.payLoan(_loan_id, _collateral_id, loan_amount);
@@ -242,8 +268,19 @@ contract EthenaCreditBleTest is Test {
         vm.stopPrank();
 
     }
-
 //forge test --fork-url https://testnet.rpc.ethena.fi/ --mt testRequestAndWithdrawAndRepayLoanBle -vvvvv
+
+    function testpriceUpdate () public {
+        deal(USDe, user, useramount);
+        deal(address(ethenaCreditBle), 10 ether);
+        deal(USDe, address(ethenaCreditBle), useramount);
+        vm.startPrank(user);
+        bytes[] memory updateData = createEthUpdate(3420);
+        uint256 price = ethenaCreditBle.updatePrice(updateData, amount); 
+    }
+
+
+//forge test --fork-url https://testnet.rpc.ethena.fi/ --mt testpriceUpdate -vvvvv
 
 
 

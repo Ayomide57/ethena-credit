@@ -7,10 +7,13 @@ import "forge-std/console.sol";
 
 import {EthenaCredit} from "../src/EthenaCredit.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { MockPyth } from "@pythnetwork/pyth-sdk-solidity/MockPyth.sol";
+import "@pythnetwork/pyth-sdk-solidity/PythStructs.sol";
 
 contract EthenaCreditTest is Test {
     address public USDe = 0xf805ce4F96e0EdD6f0b6cd4be22B34b92373d696;
     address public sUSDe = 0x1B6877c6Dac4b6De4c5817925DC40E2BfdAFc01b;
+  MockPyth public pyth;
 
     EthenaCredit public ethenaCredit;
 
@@ -27,11 +30,38 @@ contract EthenaCreditTest is Test {
     function setUp() public {
         address _ethenaCreditBle = 0x78078EdDaAa3a5a07aaE04b45AdB44599FC50aef;
         vm.startPrank(_ethenaCreditBle);
+        pyth = new MockPyth(60, 1);
 
         ethenaCredit = new EthenaCredit(USDe, sUSDe, pythContract, priceFeedId, 10);
         vm.stopPrank();
 
     }
+
+    function createEthUpdate(
+        int64 ethPrice
+    ) private view returns (bytes[] memory) {
+        bytes[] memory updateData = new bytes[](1);
+        updateData[0] = pyth.createPriceFeedUpdateData(
+        priceFeedId,
+        ethPrice * 100000, // price
+        10 * 100000, // confidence
+        -5, // exponent
+        ethPrice * 100000, // emaPrice
+        10 * 100000, // emaConfidence
+        uint64(block.timestamp), // publishTime
+        uint64(block.timestamp) // prevPublishTime
+        );
+    
+        return updateData;
+    }
+ 
+    function setEthPrice(int64 ethPrice) private {
+        bytes[] memory updateData = createEthUpdate(ethPrice);
+        uint value = pyth.getUpdateFee(updateData);
+        vm.deal(address(this), value);
+        pyth.updatePriceFeeds{ value: value }(updateData);
+    }
+
 
 //forge test --fork-url https://ethereum-sepolia-rpc.publicnode.com/ --match-path test/EthenaCredit.t.sol -vvvvv
 
@@ -174,7 +204,9 @@ contract EthenaCreditTest is Test {
         ethenaCredit.loanRequest(_collateral_id, loan_amount, 1 days);
         uint _loan_id = ethenaCredit._loan_ids() - 1;
         //assertEq(_old_loan_id - 1, _loan_id);
-        //ethenaCredit.withdrawLoan(_loan_id, _collateral_id);
+        bytes[] memory updateData = createEthUpdate(3420);
+
+        ethenaCredit.withdrawLoan(_loan_id, _collateral_id, updateData);
 
         console.log("after withdrawLoan");
         console.logUint(IERC20(USDe).balanceOf(address(ethenaCredit)));
@@ -206,7 +238,9 @@ contract EthenaCreditTest is Test {
         ethenaCredit.loanRequest(_collateral_id, loan_amount, 1 days);
         uint _loan_id = ethenaCredit._loan_ids() - 1;
         //assertEq(_old_loan_id - 1, _loan_id);
-        //ethenaCredit.withdrawLoan(_loan_id, _collateral_id);
+        bytes[] memory updateData = createEthUpdate(3420);
+
+        ethenaCredit.withdrawLoan(_loan_id, _collateral_id, updateData);
 
         IERC20(USDe).approve(address(ethenaCredit), loan_amount);
         ethenaCredit.payLoan(_loan_id, _collateral_id, loan_amount);
@@ -239,17 +273,26 @@ contract EthenaCreditTest is Test {
         ethenaCredit.loanRequest(_collateral_id, loan_amount, 1 days);
         uint _loan_id = ethenaCredit._loan_ids() - 1;
         //assertEq(_old_loan_id - 1, _loan_id);
-        //ethenaCredit.withdrawLoan(_loan_id, _collateral_id);
+        bytes[] memory updateData = createEthUpdate(3420);
+
+        ethenaCredit.withdrawLoan(_loan_id, _collateral_id, updateData);
 
         vm.expectRevert();
         ethenaCredit.cooldownAssetsUSDe(990099009900990098);
     }
 
-//3007352941176470588
-//25000000000000000000
-//50000000000000000000
-//30000000000000000000
 //forge test --fork-url https://ethereum-sepolia-rpc.publicnode.com/ --mt testRequestAndWithdrawAndRepayLoan -vvvvv
+
+    function testpriceUpdate () public {
+        deal(USDe, user, useramount);
+        deal(address(ethenaCredit), 10 ether);
+        deal(USDe, address(ethenaCredit), useramount);
+        vm.startPrank(user);
+        bytes[] memory updateData = createEthUpdate(3420);
+        uint256 price = ethenaCredit.updatePrice(updateData, amount); 
+    }
+
+//forge test --fork-url https://ethereum-sepolia-rpc.publicnode.com/ --mt testpriceUpdate -vvvvv
 
 
 }

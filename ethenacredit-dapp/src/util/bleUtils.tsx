@@ -1,85 +1,88 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { ethenacreditAbi, ethenacreditAddress, USDe, sUSDe, usdeAbi } from "./constants";
+import {
+  ethenacreditBleAbi,
+  ethenacreditBleAddress,
+  USDeOft,
+  sUSDeOft,
+  usdeOFTAbi,
+} from "./constants";
 
 import { ethers, JsonRpcProvider } from "ethers";
-import { prepareContractCall, getContract, sendTransaction, createThirdwebClient, waitForReceipt } from "thirdweb";
 import {
-  approve,
-} from "thirdweb/extensions/erc20";
+  prepareContractCall,
+  getContract,
+  sendTransaction,
+  createThirdwebClient,
+  waitForReceipt,
+} from "thirdweb";
+import { approve } from "thirdweb/extensions/erc20";
 
 //import { BigNumberish } from "ethers";
 import toast from "react-hot-toast";
 import { sepolia } from "thirdweb/chains";
 import { EvmPriceServiceConnection } from "@pythnetwork/pyth-evm-js";
 
-
-
 const clientId = process.env.NEXT_PUBLIC_ClIENT_ID2 || "";
 const priceIds = [process.env["NEXT_PUBLIC_PRICEFEEDIDS"] as string];
 
-
-
 export const pythConnection = new EvmPriceServiceConnection(
-    "https://hermes.pyth.network"
+  "https://hermes.pyth.network"
 );
 
 export const client = createThirdwebClient({
   clientId: clientId,
 });
 
-
 export const ethenaCreditContract = getContract({
   client,
-  address: ethenacreditAddress,
+  address: ethenacreditBleAddress,
   chain: sepolia,
-  abi: ethenacreditAbi,
+  abi: ethenacreditBleAbi,
 });
 
 export const usdeContract = getContract({
   client,
-  address: USDe,
+  address: USDeOft,
   chain: sepolia,
-  abi: usdeAbi,
+  abi: usdeOFTAbi,
 });
 
-
-
-export const addCollateral = async (values: { account: any, amount: number }) => {
+export const addCollateral = async (values: {
+  account: any;
+  amount: number;
+}) => {
   try {
+    const tx = approve({
+      contract: usdeContract,
+      spender: ethenacreditBleAddress,
+      amount: Number(values.amount),
+    });
 
-        const tx = approve({
-          contract: usdeContract,
-          spender: ethenacreditAddress,
-          amount: Number(values.amount),
+    const { transactionHash } = await sendTransaction({
+      account: values.account,
+      transaction: tx,
+    });
+    const receipt = await waitForReceipt({
+      client,
+      chain: sepolia,
+      transactionHash: transactionHash,
+    });
+    if (receipt) {
+      setTimeout(async () => {
+        const transaction = prepareContractCall({
+          contract: ethenaCreditContract,
+          method: "addCollateral",
+          params: [BigInt(values.amount * 1000000000000000000)],
         });
 
         const { transactionHash } = await sendTransaction({
           account: values.account,
-          transaction: tx,
+          transaction,
         });
-        const receipt = await waitForReceipt({
-          client,
-          chain: sepolia,
-          transactionHash: transactionHash,
-        });
-        if (receipt) {
-          setTimeout(async () => {
-            const transaction = prepareContractCall({
-              contract: ethenaCreditContract,
-              method: "addCollateral",
-              params: [BigInt(values.amount * 1000000000000000000)],
-            });
-
-            const { transactionHash } = await sendTransaction({
-              account: values.account,
-              transaction,
-            });
-            toast.success(transactionHash);
-          }, 5000);
-        }
-
-
+        toast.success(transactionHash);
+      }, 5000);
+    }
 
     toast.success(transactionHash);
     return transactionHash;
@@ -125,61 +128,58 @@ export const withdrawLoan = async (
   account: any,
   amount: number,
   loan_id: number,
-  collateral_id: number) => {
+  collateral_id: number
+) => {
   try {
-
-    const priceFeedUpdateData: any = await pythConnection.getPriceFeedsUpdateData(priceIds);
+    const priceFeedUpdateData: any =
+      await pythConnection.getPriceFeedsUpdateData(priceIds);
     const tx = approve({
       contract: usdeContract,
-      spender: ethenacreditAddress,
+      spender: ethenacreditBleAddress,
       amount: amount,
     });
-    console.log("col",collateral_id);
-        console.log(loan_id);
-
 
     const { transactionHash } = await sendTransaction({
-              account: account,
-              transaction: tx,
+      account: account,
+      transaction: tx,
     });
     if (transactionHash) {
-              setTimeout(async () => {
-                const tx = approve({
-                  contract: usdeContract,
-                  spender: sUSDe,
-                  amount: amount,
-                });
+      setTimeout(async () => {
+        const tx = approve({
+          contract: usdeContract,
+          spender: sUSDeOft,
+          amount: amount,
+        });
 
-                const { transactionHash } = await sendTransaction({
-                  account: account,
-                  transaction: tx,
-                });
-                    const receipt = await waitForReceipt({
-                      client,
-                      chain: sepolia,
-                      transactionHash: transactionHash,
-                    });
+        const { transactionHash } = await sendTransaction({
+          account: account,
+          transaction: tx,
+        });
+        const receipt = await waitForReceipt({
+          client,
+          chain: sepolia,
+          transactionHash: transactionHash,
+        });
 
-                if (receipt) {
-                    const transaction = prepareContractCall({
-                      contract: ethenaCreditContract,
-                      method: "withdrawLoan",
-                      params: [
-                        BigInt(loan_id),
-                        BigInt(collateral_id),
-                        priceFeedUpdateData,
-                      ],
-                    });
+        if (receipt) {
+          const transaction = prepareContractCall({
+            contract: ethenaCreditContract,
+            method: "withdrawLoan",
+            params: [
+              BigInt(loan_id),
+              BigInt(collateral_id),
+              priceFeedUpdateData,
+            ],
+          });
 
-                    const { transactionHash } = await sendTransaction({
-                      account: account,
-                      transaction,
-                    });
-                    toast.success(transactionHash);
-                }
-
-              }, 5000);
-          }
+          const { transactionHash } = await sendTransaction({
+            account: account,
+            transaction,
+          });
+          toast.success(transactionHash);
+        }
+      }, 5000);
+    }
     toast.success(transactionHash);
   } catch (error) {
     toast.error("Transaction Failed");
@@ -196,8 +196,7 @@ export const withdrawCollateral = async (
     const transaction = prepareContractCall({
       contract: ethenaCreditContract,
       method: "withdrawCollateral",
-      params: [
-        BigInt(collateral_id)],
+      params: [BigInt(collateral_id)],
     });
 
     const { transactionHash } = await sendTransaction({
@@ -239,55 +238,6 @@ export const withdrawInvestment = async (values: {
   }
 };
 
-export const cooldownAssetsUSDe = async (values: {
-  account: never;
-  amount: number;
-}) => {
-  try {
-    const transaction = prepareContractCall({
-      contract: ethenaCreditContract,
-      method: "cooldownAssetsUSDe",
-      params: [BigInt(values.amount)],
-    });
-
-    const { transactionHash } = await sendTransaction({
-      account: values.account,
-      transaction,
-    });
-
-    toast.success(transactionHash);
-    return transactionHash;
-  } catch (error) {
-    toast.error("Transaction Failed");
-    console.log("error =======================", error);
-    return false;
-  }
-};
-
-export const unstakeAssetsUSDe = async (values: {
-  account: never;
-  amount: number;
-}) => {
-  try {
-    const transaction = prepareContractCall({
-      contract: ethenaCreditContract,
-      method: "unstakeAssetsUSDe",
-      params: [BigInt(values.amount)],
-    });
-
-    const { transactionHash } = await sendTransaction({
-      account: values.account,
-      transaction,
-    });
-
-    toast.success(transactionHash);
-    return transactionHash;
-  } catch (error) {
-    toast.error("Transaction Failed");
-    console.log("error =======================", error);
-    return false;
-  }
-};
 
 export const payLoan = async (
   account: any,
@@ -299,7 +249,7 @@ export const payLoan = async (
     //get usde abi and create contrat
     const tx = approve({
       contract: usdeContract,
-      spender: ethenacreditAddress,
+      spender: ethenacreditBleAddress,
       amount: Number(amount),
     });
 
@@ -339,7 +289,7 @@ export const invest = async (
     //get usde abi and create contrat
     const tx = approve({
       contract: usdeContract,
-      spender: ethenacreditAddress,
+      spender: ethenacreditBleAddress,
       amount: Number(amount),
     });
 
@@ -353,7 +303,6 @@ export const invest = async (
       chain: sepolia,
       transactionHash: transactionHash,
     });
-
 
     if (receipt) {
       setTimeout(async () => {
@@ -377,23 +326,21 @@ export const invest = async (
   }
 };
 
-export const updatePrice = async (account: any, amount: number ) => {
+export const updatePrice = async (account: any, amount: number) => {
   try {
-        const priceFeedUpdateData: any =
-          await pythConnection.getPriceFeedsUpdateData(priceIds);
+    const priceFeedUpdateData: any =
+      await pythConnection.getPriceFeedsUpdateData(priceIds);
 
-        const transaction = prepareContractCall({
-          contract: ethenaCreditContract,
-          method: "updatePrice",
-          params: [
-            priceFeedUpdateData, BigInt(amount * 1000000000000000000),
-          ],
-        });
+    const transaction = prepareContractCall({
+      contract: ethenaCreditContract,
+      method: "updatePrice",
+      params: [priceFeedUpdateData, BigInt(amount * 1000000000000000000)],
+    });
 
-        const { transactionHash } = await sendTransaction({
-          account: account,
-          transaction,
-        });
+    const { transactionHash } = await sendTransaction({
+      account: account,
+      transaction,
+    });
 
     toast.success(transactionHash);
     return transactionHash;
@@ -479,25 +426,11 @@ export const collateralList = async (values: {
   }
 };
 
-const url = "https://11155111.rpc.thirdweb.com/";
+const url = "https://52085143.rpc.thirdweb.com/";
 export const providerLink = new JsonRpcProvider(url);
 
 export const ethenaContract = new ethers.Contract(
-  ethenacreditAddress,
-  ethenacreditAbi,
+  ethenacreditBleAddress,
+  ethenacreditBleAbi,
   providerLink
 );
-
-
-
-
-
-
-
-
-
-
-
-
-
-

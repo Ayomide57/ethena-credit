@@ -68,10 +68,10 @@ This project is licensed under the [MIT License](https://opensource.org/licenses
 
 ## Contract Addresses
 
-EthenaCredit Contract is deployed to [0xcACe89Dc6dBcEC43E449EbAb86E62b2d2C71F24e] on Sepolia
+EthenaCredit Contract is deployed to [0xf8ED130850838Ee59c3Cb7eAe1E3B140Ce01D111] on Sepolia
 Deployer: [0x78078EdDaAa3a5a07aaE04b45AdB44599FC50aef]
-Transaction hash: 0x0d9833f208654ca7b2a37cab2c636c95a4c15f3a56f51ab5354872be1f116c7c
-(https://sepolia.etherscan.io/tx/0x0d9833f208654ca7b2a37cab2c636c95a4c15f3a56f51ab5354872be1f116c7c) on Sepolia.
+Transaction hash: 0xbdd62cdb0378f4e1d0b15f814f4a5557e0172e7bc653f030fadc39069ce7ceaf
+(https://sepolia.etherscan.io/tx/0xbdd62cdb0378f4e1d0b15f814f4a5557e0172e7bc653f030fadc39069ce7ceaf) on Sepolia.
 
 
 EthenaCreditBle Contract is deployed to [0x5626049933b6Ca9642023D57eaBAd2030a285eb9] on Ble Testnet

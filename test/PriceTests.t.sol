@@ -19,11 +19,16 @@ contract MyFirstPythContractTest is Test {
   uint256 ETH_TO_WEI = 10 ** 18;
  
   function setUp() public {
-    //pyth = new MockPyth(60, 1);
-    app = new MyFirstPythContract(address(pyth), priceFeedId);
+    pyth = new MockPyth(60, 1);
+    //app = new MyFirstPythContract(address(pyth), priceFeedId);
+    app = new MyFirstPythContract(pythContract, priceFeedId);
     pyth1 = IPyth(pythContract);
 
   }
+
+//forge test --match-path test/PriceTests.t.sol -vvvvv
+
+
  
   function createEthUpdate(
     int64 ethPrice
@@ -88,7 +93,14 @@ contract MyFirstPythContractTest is Test {
     //vm.expectRevert();
     //app.mint{ value: ETH_TO_WEI / 100 }();
   }
+  function testUpdateAndMint() public {
+    bytes[] memory updateData = createEthUpdate(3420);
+ 
+    vm.deal(address(this), ETH_TO_WEI);
+    app.updateAndMint{ value: ETH_TO_WEI / 100 }(updateData);
 
+  }
+//1000000000000000000000
 //forge test --fork-url https://ethereum-sepolia-rpc.publicnode.com/ --mt testMintRevert -vvvvv
 
 
